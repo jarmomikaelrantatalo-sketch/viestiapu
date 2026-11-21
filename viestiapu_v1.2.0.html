@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Viestiapu v1.2.0</title>
+<style>
+:root{--bg:#14171c;--card:#1d2128;--line:#2c323c;--txt:#e7e9ee;--mut:#9aa3b2;--acc:#4f9cf7;--ok:#3fbf7f;--warn:#e8b33f;--err:#e5534b;--tip:#8b7cf6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:84px}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.top{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 4px}
+.top h1{font-size:18px;margin:0}
+.ver{color:var(--mut);font-size:12px}
+nav{display:flex}
+nav button{flex:1;background:none;border:0;border-bottom:3px solid transparent;color:var(--mut);padding:10px 4px;font-size:15px;cursor:pointer}
+nav button.on{color:var(--txt);border-color:var(--acc)}
+main{max-width:720px;margin:0 auto;padding:12px 14px}
+.sec{display:none}.sec.on{display:block}
+label{display:block;font-size:13px;color:var(--mut);margin:12px 0 4px}
+textarea,input,select{width:100%;background:var(--card);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit}
+textarea{resize:vertical}
+#mine{min-height:140px;font-size:17px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.btn{background:var(--card);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font:inherit;cursor:pointer}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+.btn.rec{background:var(--err);border-color:var(--err);color:#fff}
+.btn.danger{color:var(--err)}
+.btn:disabled{opacity:.5}
+.mut{color:var(--mut);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
+.res{list-style:none;padding:0;margin:10px 0 0}
+.res li{border-left:4px solid var(--line);background:var(--card);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:14px}
+.res li b{display:block;font-size:14px}
+.res li.err{border-color:var(--err)}.res li.warn{border-color:var(--warn)}.res li.tip{border-color:var(--tip)}.res li.ok{border-color:var(--ok)}
+.res li .src{color:var(--mut);font-size:12px;display:block;margin-top:2px}
+.qs{margin:6px 0 0;padding-left:18px;font-size:14px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--line);padding:10px 14px;display:flex;gap:8px;justify-content:center;z-index:6}
+.bar .btn{flex:1;max-width:340px;padding:14px}
+#toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:#000c;color:#fff;padding:8px 14px;border-radius:8px;font-size:14px;display:none;z-index:9}
+.person{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.person .nm{font-weight:600}
+.hist{font-size:13px;border-top:1px solid var(--line);padding-top:6px;margin-top:6px}
+.hist .h{margin:6px 0;white-space:pre-wrap}
+.hist .h .t{color:var(--mut);font-size:12px}
+.guide h3{margin:18px 0 4px;font-size:16px}
+.guide p{margin:4px 0}
+.guide .src{color:var(--mut);font-size:12px}
+.note{background:#2a2410;border:1px solid #5a4a14;border-radius:10px;padding:10px;font-size:14px;margin-top:10px}
+.hidden{display:none}
+#longTime{font-size:32px;font-weight:700;font-variant-numeric:tabular-nums}
+#longText{min-height:300px;font-size:16px}
+#longInterim{color:var(--mut);font-style:italic;min-height:1.4em;font-size:14px;margin-top:4px}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--txt);margin:8px 0 0}
+.chk input{width:auto}
+.chip{display:inline-block;margin:4px 4px 0 0;padding:6px 10px;border-radius:16px;background:#26303d;border:1px solid var(--line);color:var(--txt);font:inherit;font-size:14px;cursor:pointer}
+.an{border-left:4px solid var(--tip)}
+.an .src{color:var(--mut);font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <div class="top"><h1>Viestiapu</h1><span class="ver">v1.2.0 · ei API-avainta</span></div>
+  <nav>
+    <button data-tab="kirjoita" class="on">Kirjoita</button>
+    <button data-tab="sanelu">Pitkä sanelu</button>
+    <button data-tab="muistio">Muistio</button>
+    <button data-tab="ohjeet">Ohjeet</button>
+  </nav>
+</header>
+
+<main>
+<!-- KIRJOITA -->
+<section id="kirjoita" class="sec on">
+  <label for="who">Keskustelukumppani</label>
+  <select id="who"></select>
+  <div id="whoInfo" class="mut"></div>
+
+  <div class="card">
+    <b>Ääniviesti</b>
+    <p class="mut" style="margin:4px 0">Lataa hänen ääniviestinsä (esim. WhatsAppin .opus-tiedosto). Sovellus muuntaa sen tekstiksi Hänen viestinsä -kenttään ja analysoi sen.</p>
+    <div class="row">
+      <label class="btn" style="margin:0;color:var(--txt);font-size:16px">Valitse äänitiedosto<input type="file" id="audioFile" accept="audio/*,.opus,.ogg,.oga,.m4a,.mp3,.aac,.wav" class="hidden"></label>
+      <button class="btn" id="audioTx" disabled>Muunna tekstiksi</button>
+    </div>
+    <audio id="audioEl" controls class="hidden" style="width:100%;margin-top:8px"></audio>
+    <div id="audioStatus" class="mut"></div>
+  </div>
+
+  <label for="her">Hänen viestinsä (valinnainen, liitä tähän)</label>
+  <textarea id="her" rows="3" spellcheck="false" placeholder="Liitä hänen viimeisin viestinsä..."></textarea>
+  <div id="herQ"></div>
+  <div id="analysis"></div>
+
+  <label for="mine">Oma vastaus</label>
+  <textarea id="mine" lang="fi" spellcheck="true" autocapitalize="sentences" placeholder="Kirjoita tai sanele..."></textarea>
+  <div class="row">
+    <button class="btn" id="micBtn">🎤 Sanele</button>
+    <span id="micStatus" class="mut"></span>
+    <span id="count" class="mut" style="margin-left:auto"></span>
+  </div>
+  <div id="micHelp" class="note hidden"></div>
+  <div class="row">
+    <button class="btn" id="fixBtn">Korjaa kirjoitusvirheet</button>
+    <button class="btn" id="saveHistBtn">Tallenna historiaan</button>
+    <button class="btn danger" id="clearBtn">Tyhjennä</button>
+  </div>
+  <ul class="res" id="results"></ul>
+  <p class="mut">Sanelussa voit sanoa: <i>pilkku, piste, kysymysmerkki, huutomerkki, uusi rivi</i>.<br>
+  Yksittäisten sanojen kirjoitusvirheet näkyvät punaisella alleviivauksella, jos laitteen oikoluku tukee suomea. Androidissa se on näppäimistön (esim. Gboard) asetuksissa.</p>
+</section>
+
+<!-- PITKÄ SANELU -->
+<section id="sanelu" class="sec">
+  <div class="card">
+    <div class="row" style="margin-top:0">
+      <span id="longTime">0:00</span>
+      <button class="btn pri" id="longBtn" style="margin-left:auto">▶ Aloita</button>
+    </div>
+    <div id="longStatus" class="mut"></div>
+    <div id="wakeInfo" class="mut"></div>
+    <div class="mut" id="longRestarts"></div>
+    <label class="chk"><input type="checkbox" id="longStamps" checked> Aikaleima 5 minuutin välein</label>
+  </div>
+  <div id="longHelp" class="note hidden"></div>
+  <label for="longText">Teksti (tallentuu automaattisesti)</label>
+  <textarea id="longText" lang="fi" spellcheck="true"></textarea>
+  <div id="longInterim"></div>
+  <div class="row">
+    <span id="longCount" class="mut"></span>
+  </div>
+  <div class="row">
+    <button class="btn" id="longCopy">Kopioi</button>
+    <button class="btn" id="longDl">Lataa .txt</button>
+    <button class="btn danger" id="longClear">Tyhjennä</button>
+  </div>
+  <div class="note">
+    <b>Hyvä tietää</b><br>
+    • Chrome katkaisee tunnistuksen itse noin minuutin välein tai hiljaisuuden jälkeen. Sovellus käynnistää sen heti uudelleen, mutta katkon kohdalta voi pudota sana tai pari.<br>
+    • Pidä sovellus auki edessä. Taustalla tai lukitulla näytöllä tunnistus pysähtyy.<br>
+    • Puhelin lähelle puhujia. Kaukaa ja päällekkäin puhuttu tunnistuu huonosti. Sovellus ei erota puhujia.<br>
+    • Tarvitsee verkkoyhteyden koko ajan. Kytke laturi pitkää sanelua varten.<br>
+    • Tarkista työpaikalla, saako palaverin keskustelun tallentaa.
+  </div>
+</section>
+
+<!-- MUISTIO -->
+<section id="muistio" class="sec">
+  <div class="row"><button class="btn pri" id="newPerson">+ Uusi henkilö</button></div>
+  <div id="editor" class="card hidden">
+    <input type="hidden" id="pId">
+    <label for="pName">Nimi</label><input id="pName">
+    <label for="pCh">Mistä</label>
+    <select id="pCh"><option>WhatsApp</option><option>TikTok</option><option>Kasvokkain</option><option>Muu</option></select>
+    <label for="pInt">Kiinnostuksen kohteet</label><textarea id="pInt" rows="2"></textarea>
+    <label for="pTold">Mitä hän on kertonut (työ, perhe, suunnitelmat...)</label><textarea id="pTold" rows="3"></textarea>
+    <label for="pDates">Muistettavat päivät</label><textarea id="pDates" rows="2" placeholder="esim. syntymäpäivä, työhaastattelu pe 27.11."></textarea>
+    <label for="pNotes">Omat muistiinpanot</label><textarea id="pNotes" rows="3"></textarea>
+    <div class="row">
+      <button class="btn pri" id="pSave">Tallenna</button>
+      <button class="btn" id="pCancel">Peruuta</button>
+      <button class="btn danger" id="pDel">Poista</button>
+    </div>
+  </div>
+  <div id="people"></div>
+
+  <div class="card">
+    <b>Varmuuskopio</b>
+    <p class="mut">Tiedot ovat vain tämän selaimen muistissa. Ota välillä kopio.</p>
+    <div class="row">
+      <button class="btn" id="expBtn">Lataa tiedosto</button>
+      <button class="btn" id="expCopy">Kopioi tiedot</button>
+      <label class="btn" style="margin:0;color:var(--txt);font-size:16px">Tuo tiedosto<input type="file" id="impFile" accept=".json,application/json" class="hidden"></label>
+    </div>
+  </div>
+</section>
+
+<!-- OHJEET -->
+<section id="ohjeet" class="sec guide">
+  <div class="note">Alla on vertaisarvioituja tutkimustuloksia. Ne kuvaavat keskimääräisiä vaikutuksia ryhmissä eivätkä takaa lopputulosta yksittäisessä keskustelussa. Sovelluksen tarkistukset, joissa ei ole lähdettä, ovat sääntöpohjaisia muistutuksia, eivät tutkimustuloksia.</div>
+
+  <h3>1. Kysy jatkokysymyksiä</h3>
+  <p>Ihmiset, jotka kysyivät keskustelussa enemmän kysymyksiä, erityisesti jatkokysymyksiä toisen sanomaan, koettiin miellyttävämmiksi. Tulos toistui myös pikatreffiaineistossa.</p>
+  <p class="src">Huang, Yeomans, Brooks, Minson & Gino (2017). It doesn't hurt to ask: Question-asking increases liking. Journal of Personality and Social Psychology, 113(3), 430–452.</p>
+  <p><b>Käytännössä:</b> tartu johonkin, mitä hän juuri kirjoitti, ja kysy siitä lisää.</p>
+
+  <h3>2. Näytä, että kuuntelit</h3>
+  <p>Läheisyyden malli: läheisyys syntyy, kun toinen kokee, että häntä ymmärretään, arvostetaan ja hänestä välitetään vastauksen perusteella.</p>
+  <p class="src">Reis & Shaver (1988). Intimacy as an interpersonal process. Teoksessa Handbook of Personal Relationships.</p>
+  <p><b>Käytännössä:</b> viittaa hänen sanoihinsa ennen kuin vaihdat aihetta.</p>
+
+  <h3>3. Kerro itsestäsi vähitellen ja vastavuoroisesti</h3>
+  <p>Vähitellen syvenevä, vuorotteleva itsestä kertominen lisäsi koettua läheisyyttä tuntemattomien välillä kokeellisessa asetelmassa.</p>
+  <p class="src">Aron, Melinat, Aron, Vallone & Bator (1997). The experimental generation of interpersonal closeness. Personality and Social Psychology Bulletin, 23(4), 363–377.</p>
+  <p><b>Käytännössä:</b> kun hän kertoo jotain itsestään, kerro vastaavan tasoinen asia itsestäsi, älä paljon syvempää.</p>
+
+  <h3>4. Reagoi aidosti hyviin uutisiin</h3>
+  <p>Innostunut ja kiinnostunut reagointi toisen hyviin uutisiin (ns. aktiivis-rakentava tapa) oli yhteydessä parempaan suhteen laatuun. Välinpitämätön tai aiheen omaan itseen kääntävä reaktio ei ollut.</p>
+  <p class="src">Gable, Reis, Impett & Asher (2004). What do you do when things go right? Journal of Personality and Social Psychology, 87(2), 228–245.</p>
+  <p><b>Käytännössä:</b> "Mahtavaa! Miltä se tuntui?" toimii paremmin kuin "ok kiva".</p>
+
+  <h3>5. Vastaa yhteydenottoyrityksiin</h3>
+  <p>Gottmanin parisuhdetutkimuksissa se, että kumppani kääntyi toisen pienten yhteydenottojen ("katso tätä", "arvaa mitä") puoleen, oli yhteydessä suhteen pysyvyyteen.</p>
+  <p class="src">Gottman & DeClaire (2001). The Relationship Cure. Taustalla Gottmanin pitkittäistutkimukset vastanaineista pareista.</p>
+  <p><b>Käytännössä:</b> jos hän lähettää kuvan tai linkin, kommentoi sitä, älä ohita.</p>
+
+  <h3>Ääniviestin lataaminen sovellukseen</h3>
+  <p><b>Tietokone:</b> avaa WhatsApp Web tai työpöytäsovellus, lataa ääniviesti viestin valikosta ja valitse tiedosto sovelluksessa.</p>
+  <p><b>Android:</b> jaa tai tallenna ääniviesti WhatsAppista tiedostoksi ja valitse se sovelluksessa.</p>
+  <p>Muunnos toimii Chromen puheentunnistuksella. Jos selain ei osaa muuntaa tiedostoa suoraan, viesti soitetaan kaiuttimesta ja mikrofoni kuuntelee sen. Pidä silloin ympäristö hiljaisena. Tarkista teksti aina, tunnistus tekee virheitä.</p>
+
+  <h3>Sanelu ei toimi ("mikrofoni estetty")</h3>
+  <p>Sovellus näyttää Kirjoita-välilehdellä, mikä näistä syistä on kyseessä.</p>
+  <p><b>1. Avattu claude.ai-linkistä.</b> Linkin sivu ei saa käyttää mikrofonia, eikä sitä voi sallia. Käytä puhelimessa näppäimistön (Gboard) mikrofonipainiketta tekstikentässä. Se toimii aina.</p>
+  <p><b>2. Avattu tiedostona tietokoneella</b> (osoite alkaa file://). Chrome ei yleensä salli puheentunnistusta tiedostona avatulla sivulla. Korjaus: avaa komentorivi kansiossa, jossa tiedosto on, ja aja<br><code>python -m http.server 8000</code><br>Avaa sitten Chromessa osoite <code>http://localhost:8000/</code> ja valitse tiedosto listasta.</p>
+  <p><b>3. Lupa on estetty.</b> Chromessa napauta osoiterivin vasemmassa reunassa olevaa kuvaketta, valitse Luvat tai Sivuston asetukset, aseta Mikrofoni: Salli ja lataa sivu uudelleen.<br>
+  Android: tarkista myös Asetukset → Sovellukset → Chrome → Luvat → Mikrofoni → Salli.<br>
+  Windows: tarkista myös Asetukset → Tietosuoja ja suojaus → Mikrofoni, että mikrofonin käyttö on sallittu sovelluksille ja työpöytäsovelluksille.</p>
+  <p><b>Pysyvä ratkaisu puhelimeen:</b> sovellus laitetaan omaan https-osoitteeseen (esim. ilmainen GitHub Pages). Silloin Chromen oma sanelu toimii myös Androidilla.</p>
+
+  <h3>Kasvokkain</h3>
+  <p>Samat periaatteet pätevät: jatkokysymykset, hänen sanoihinsa viittaaminen ja vastavuoroinen kertominen. Sovellusta ei ole tehty käytettäväksi kesken kasvokkaisen keskustelun. Käytä Muistiota ennen tapaamista ja sen jälkeen.</p>
+
+  <h3>Versiot</h3>
+  <p class="mut">v1.2.0 – Pitkä sanelu -välilehti: automaattinen uudelleenkäynnistys, kello, aikaleimat, automaattinen tallennus, näytön päälläpito, kopiointi ja .txt-lataus.<br>v1.1.1 – Sanelun vianmääritys: sovellus kertoo, miksi mikrofoni on estetty, ja antaa korjausohjeet.<br>v1.1.0 – Ääniviestin muunnos tekstiksi, hänen viestinsä analyysi ja lisättävät vastausehdotukset.<br>v1.0 – Ensimmäinen versio.</p>
+</section>
+</main>
+
+<div class="bar">
+  <button class="btn pri" id="copyBtn">Kopioi vastaus</button>
+</div>
+<div id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+var KEY='viestiapu_v1';
+var state={people:[],current:''};
+
+// ---------- tallennus ----------
+function load(){
+  try{var s=localStorage.getItem(KEY);if(s){var d=JSON.parse(s);if(d&&Array.isArray(d.people))state=d;}}catch(e){}
+  if(!state.current)state.current='';
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){toast('Tallennus ei onnistunut tässä selaimessa');}}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function $(id){return document.getElementById(id);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function toast(msg){var t=$('toast');t.textContent=msg;t.style.display='block';clearTimeout(toast._t);toast._t=setTimeout(function(){t.style.display='none';},1800);}
+function person(id){for(var i=0;i<state.people.length;i++)if(state.people[i].id===id)return state.people[i];return null;}
+
+// ---------- välilehdet ----------
+var tabs=document.querySelectorAll('nav button');
+for(var i=0;i<tabs.length;i++){tabs[i].addEventListener('click',function(){
+  for(var j=0;j<tabs.length;j++)tabs[j].classList.remove('on');
+  this.classList.add('on');
+  var secs=document.querySelectorAll('.sec');for(var k=0;k<secs.length;k++)secs[k].classList.remove('on');
+  $(this.getAttribute('data-tab')).classList.add('on');
+  $('copyBtn').parentNode.style.display=this.getAttribute('data-tab')==='kirjoita'?'flex':'none';
+});}
+
+// ---------- tarkistukset ----------
+var MISSPELL={
+ 'tälläinen':'tällainen','tälläisen':'tällaisen','tälläistä':'tällaista','tälläiset':'tällaiset',
+ 'mielummin':'mieluummin','mieluimmin':'mieluummin',
+ 'kokoajan':'koko ajan','jokatapauksessa':'joka tapauksessa','itseasiassa':'itse asiassa',
+ 'tottakai':'totta kai','pitkästaikaa':'pitkästä aikaa','loppujenlopuksi':'loppujen lopuksi',
+ 'kaikenkaikkiaan':'kaiken kaikkiaan','yhtäkiä':'yhtäkkiä','kiinostaa':'kiinnostaa',
+ 'kiinostava':'kiinnostava','kiinostavaa':'kiinnostavaa','vähänaikaa':'vähän aikaa',
+ 'aikalailla':'aika lailla','hyvääyötä':'hyvää yötä','hyvääpäivää':'hyvää päivää',
+ 'esimerkikski':'esimerkiksi',
+ 'yleensäkkin':'yleensäkin','muutenkkin':'muutenkin','ainakkin':'ainakin','myöskkin':'myöskin'
+};
+var SWEAR=/(^|[^\p{L}])(vitt\p{L}*|perkele\p{L}*|perkeleen|saatan\p{L}*|helvet\p{L}*|paska\p{L}*|jumalaut\p{L}*|kyrp\p{L}*|mulkk\p{L}*|huor\p{L}*)/giu;
+var PRESSURE=[/miks(i)?\s+(et|ette)\s+(vastaa|vastannut|vastannu|vastaile|kirjota|kirjoita)/iu,/(oot|ootko|oletko|olet)\s+(sä\s+|sinä\s+|sie\s+)?(vihainen|suuttunut|suuttunu|vihanen)/iu,/vastaa\s+(nyt|jo|edes)/iu,/(jätit|jätät|jätätkö)\s+(mut|minut|minua|mua)\s+(lukemalle|lukematta|ilman vastausta)/iu,/(miks|miksi)\s+(sä|sinä|sie)?\s*(et|ei)\s+(vastaa|oo|ole)/iu];
+var BODY=/(^|[^\p{L}])(seksi\p{L}*|seksikä\p{L}*|vartalo\p{L}*|tissi\p{L}*|rinta(si|nne)|pylly\p{L}*|perse\p{L}*|alasto\p{L}*|nudes?)(?![\p{L}])/iu;
+var SELF=/((olen|oon|mä oon|minä olen)\s+((niin|ihan|tosi|aika|vähän|kauhean|todella)\s+)?(ruma|tyhmä|surkea|luuseri|huono|tylsä|säälittävä))|(en\s+(kelpaa|ansaitse))|(kukaan\s+ei\s+(halua|tykkää|välitä))/iu;
+var EX=/(^|[^\p{L}])(exä\p{L}*|ex-\p{L}+|ex(?![\p{L}])|entinen\s+(vaimo|vaimoni|tyttöystävä|tyttöystäväni|avovaimo|puoliso|kumppani)|entisen\s+(vaimo|tyttöystävä)\p{L}*)/iu;
+var STOP={'minä':1,'sinä':1,'hänen':1,'tämä':1,'tuo':1,'että':1,'mutta':1,'kanssa':1,'koska':1,'vaikka':1,'sitten':1,'kuitenkin':1,'olisi':1,'oikein':1,'ihan':1,'aika':1,'myös':1,'vielä':1,'mitä':1,'missä':1,'milloin':1,'miten':1,'miksi':1,'ollut':1,'olla':1,'olen':1,'oletko':1,'tänään':1,'nyt':1,'joka':1,'jotka':1,'kaikki':1,'mulla':1,'sulla':1,'mulle':1,'sulle':1,'meillä':1,'teillä':1,'täällä':1,'siellä':1,'tosi':1,'kyllä':1,'niin':1,'kiitos':1};
+
+function sentences(t){return t.split(/(?<=[.!?])\s+|\n+/).map(function(s){return s.trim();}).filter(Boolean);}
+function words(t){return (t.toLowerCase().match(/\p{L}+/gu)||[]);}
+function stems(t){var o={};words(t).forEach(function(w){if(w.length>=5&&!STOP[w])o[w.slice(0,5)]=1;});return o;}
+
+function findMisspell(t){
+  var found=[];
+  Object.keys(MISSPELL).forEach(function(k){
+    if(MISSPELL[k]===k)return;
+    var re=new RegExp('(?<![\\p{L}])'+k+'(?![\\p{L}])','giu');
+    if(re.test(t))found.push(k);
+  });
+  return found;
+}
+function mechanicalFix(t){
+  var o=t;
+  Object.keys(MISSPELL).forEach(function(k){
+    if(MISSPELL[k]===k)return;
+    var re=new RegExp('(?<![\\p{L}])'+k+'(?![\\p{L}])','giu');
+    o=o.replace(re,function(m){var r=MISSPELL[k];return m.charAt(0)===m.charAt(0).toUpperCase()&&m.charAt(0)!==m.charAt(0).toLowerCase()?r.charAt(0).toUpperCase()+r.slice(1):r;});
+  });
+  o=o.replace(/[ \t]{2,}/g,' ');
+  o=o.replace(/[ \t]+([,.!?;:])/g,'$1');
+  o=o.replace(/(^|\s)(\p{L}+)(\s+\2)+(?=[\s,.!?]|$)/giu,'$1$2');
+  o=o.replace(/^(\s*)(\p{Ll})/u,function(m,a,b){return a+b.toUpperCase();});
+  o=o.replace(/([.!?]\s+)(\p{Ll})/gu,function(m,a,b){return a+b.toUpperCase();});
+  o=o.replace(/\n(\s*)(\p{Ll})/gu,function(m,a,b){return '\n'+a+b.toUpperCase();});
+  return o.trim();
+}
+
+function check(){
+  var t=$('mine').value, h=$('her').value, R=[];
+  $('count').textContent=t.length?t.length+' merkkiä':'';
+  renderHerQ(h);renderAnalysis(h);
+  if(!t.trim()){$('results').innerHTML='';return;}
+
+  // kirjoitusasu
+  var ms=findMisspell(t);
+  if(ms.length)R.push(['err','Kirjoitusvirhe',ms.map(function(m){return '"'+m+'" → "'+MISSPELL[m.toLowerCase()]+'"';}).join(', ')]);
+  if(/[ \t]{2,}/.test(t))R.push(['err','Tuplavälilyönti','Tekstissä on kaksi välilyöntiä peräkkäin.']);
+  if(/[ \t]+[,.!?;:]/.test(t))R.push(['err','Välilyönti ennen välimerkkiä','Esim. "moi ," → "moi,"']);
+  var rep=t.match(/(^|\s)(\p{L}+)(\s+\2)+(?=[\s,.!?]|$)/iu);
+  if(rep)R.push(['err','Toistuva sana','"'+rep[2]+' '+rep[2]+'"']);
+  var low=sentences(t).filter(function(s){return /^\p{Ll}/u.test(s);});
+  if(low.length)R.push(['err','Pieni alkukirjain','Lause alkaa pienellä: "'+low[0].slice(0,30)+'"']);
+
+  // sävy
+  var caps=(t.match(/(?<![\p{L}])[A-ZÅÄÖ]{3,}(?![\p{L}])/gu)||[]);
+  if(caps.length>=2)R.push(['warn','ISOT KIRJAIMET','Isoilla kirjoitettu teksti luetaan usein huutamisena.']);
+  if(/[!?]{3,}/.test(t))R.push(['warn','Monta välimerkkiä','Esim. "!!!" tai "???" voi näyttää kiihtyneeltä.']);
+  var sw=t.match(SWEAR);
+  if(sw)R.push(['warn','Kirosana',sw.map(function(s){return s.trim();}).join(', ')]);
+  if(PRESSURE.some(function(r){return r.test(t);}))R.push(['warn','Painostava sävy','Vastaamatta jättämisestä tai suuttumisesta kysyminen voi tuntua vastaanottajasta painostavalta.']);
+  if(BODY.test(t))R.push(['warn','Vartaloon tai seksiin liittyvä sana','Mieti, sopiiko se tähän keskustelun vaiheeseen.']);
+  if(SELF.test(t))R.push(['warn','Itsensä vähättely','Tekstissä on itseä vähättelevä ilmaus.']);
+  if(EX.test(t))R.push(['tip','Entinen kumppani mainittu','Mieti, onko aihe tarpeen tässä viestissä.']);
+  var hr=new Date().getHours();
+  if(hr<6)R.push(['tip','Kellonaika','Kello on '+hr+'. Viestin voi kirjoittaa nyt ja lähettää aamulla.']);
+
+  // pituus
+  if(h.trim()&&t.length>200&&t.length>h.length*3)R.push(['tip','Pituus','Vastauksesi on yli kolme kertaa hänen viestiään pidempi.']);
+  else if(t.length>700)R.push(['tip','Pituus','Pitkä viesti ('+t.length+' merkkiä). Voisiko osan kertoa myöhemmin?']);
+  var qn=(t.match(/\?+/g)||[]).length;
+  if(qn>=3)R.push(['tip','Monta kysymystä','Viestissä on '+qn+' kysymystä. Kysymystulva voi tuntua kuulustelulta.']);
+
+  // tutkimuspohjaiset
+  if(h.trim()){
+    if(qn===0)R.push(['tip','Ei kysymystä','Jatkokysymys siihen, mitä hän kertoi, lisäsi tutkimuksessa koettua pitämistä.','Huang ym. 2017']);
+    var hs=stems(h), ts=stems(t), hk=Object.keys(hs), shared=hk.filter(function(k){return ts[k];});
+    if(hk.length>=3&&shared.length===0)R.push(['tip','Ei viittausta hänen viestiinsä','Vastauksessa ei ole yhtään hänen viestinsä sisältösanoista. Viittaa hänen sanomaansa, jotta hän kokee tulleensa kuulluksi.','Reis & Shaver 1988']);
+  }
+
+  if(!R.length)R.push(['ok','Ei huomautettavaa','Tarkistukset eivät löytäneet mitään. Lue viesti silti kerran itse ennen lähettämistä.']);
+  $('results').innerHTML=R.map(function(r){return '<li class="'+r[0]+'"><b>'+esc(r[1])+'</b>'+esc(r[2])+(r[3]?'<span class="src">Lähde: '+esc(r[3])+'</span>':'')+'</li>';}).join('');
+}
+function renderHerQ(h){
+  var qs=sentences(h).filter(function(s){return /\?$/.test(s);});
+  $('herQ').innerHTML=qs.length?'<div class="card"><b>Hän kysyi – vastasitko näihin?</b><ul class="qs">'+qs.map(function(q){return '<li>'+esc(q)+'</li>';}).join('')+'</ul></div>':'';
+}
+// ---------- hänen viestinsä analyysi ----------
+var GOOD=/(^|[^\p{L}])(sain|pääsin|onnistuin|valmistuin|voitin|ylenn\p{L}*|uuden työ\p{L}*|uusi työ|innoissani|ihanaa|mahtava\p{L}*|vihdoin|jee|hyviä uutisia|ilouutis\p{L}*)/iu;
+var BAD=/(^|[^\p{L}])(väsyn\p{L}*|väsyttä\p{L}*|sairas\p{L}*|kipeä\p{L}*|flunss\p{L}*|surullin\p{L}*|harmitt\p{L}*|huono päivä|stress\p{L}*|riidel\p{L}*|riita\p{L}*|itkett\p{L}*|ahdist\p{L}*|rankka\p{L}*|raskas\p{L}*|menetin|kuoli|potkut|lomaut\p{L}*)/iu;
+var PLAN=/(^|[^\p{L}])(huomenna|ylihuomenna|viikonloppuna|ensi viikolla|tänä iltana|illalla|tavataanko|nähdäänkö|lähdetäänkö|mennäänkö|olisitko|oisitko|ehditkö|kahville|syömään)(?![\p{L}])/iu;
+var MEDIA=/(^|[^\p{L}])(kuva|kuvan|kuvia|video\p{L}*|linkki\p{L}*|katso|kato|biisi\p{L}*|kappale\p{L}*)(?![\p{L}])/iu;
+var FOLLOW=['Miten se meni?','Miltä se tuntui?','Mitä sitten tapahtui?','Mikä siinä on parasta?','Miten päädyit siihen?','Kerro lisää!'];
+function chips(arr){return arr.map(function(c){return '<button class="chip" data-ins="'+esc(c)+'">'+esc(c.trim())+'</button>';}).join('');}
+function block(title,text,src,arr){return '<div class="card an"><b>'+esc(title)+'</b><p style="margin:4px 0;font-size:14px">'+esc(text)+'</p>'+(src?'<div class="src">Lähde: '+esc(src)+'</div>':'')+(arr?'<div>'+chips(arr)+'</div>':'')+'</div>';}
+function renderAnalysis(h){
+  if(!h.trim()){$('analysis').innerHTML='';return;}
+  var out=[];
+  if(GOOD.test(h))out.push(block('Hyvä uutinen','Hän kertoi jotain myönteistä. Reagoi innostuneesti ja kysy lisää.','Gable ym. 2004',['Mahtavaa! ','Onneksi olkoon! ','Miltä se tuntui?','Kerro lisää!']));
+  if(BAD.test(h))out.push(block('Jotain raskasta','Huomioi hänen tunteensa ennen kuin kerrot omista asioistasi.','Reis & Shaver 1988',['Voi ei, kuulostaa raskaalta. ','Mitä tapahtui?','Miten jaksat nyt?']));
+  if(PLAN.test(h))out.push(block('Aika tai suunnitelma mainittu','Vastaa selvästi: kyllä, ei tai ehdota toista aikaa.',null,['Kuulostaa hyvältä! ','Sopii minulle. ','Käykö sinulle ']));
+  if(MEDIA.test(h))out.push(block('Hän jakoi jotain','Kommentoi sitä, mitä hän jakoi. Älä ohita.','Gottman & DeClaire 2001',['Hieno! ','Mistä löysit tämän?']));
+  var cnt={};words(h).forEach(function(w){if(w.length>=5&&!STOP[w])cnt[w]=(cnt[w]||0)+1;});
+  var top=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a];}).slice(0,6);
+  out.push(block('Jatkokysymys','Aiheet joihin voit tarttua: '+(top.length?top.join(', '):'—')+'. Valitse kysymys ja muokkaa se koskemaan aihetta.','Huang ym. 2017',FOLLOW));
+  $('analysis').innerHTML='<p class="mut" style="margin:10px 0 0">Analyysi ja ehdotukset ovat sääntöpohjaisia. Sovellus ei ymmärrä viestin merkitystä niin kuin tekoäly. Napauta ehdotusta, niin se lisätään vastaukseesi.</p>'+out.join('');
+}
+$('analysis').addEventListener('click',function(e){
+  var t=e.target.getAttribute&&e.target.getAttribute('data-ins');if(t==null)return;
+  var m=$('mine'),v=m.value;m.value=(v&&!/\s$/.test(v)?v+' ':v)+t;m.focus();check();
+});
+
+// ---------- ääniviesti ----------
+var audioUrl=null, txRec=null;
+function aStat(m){$('audioStatus').textContent=m;}
+function errText(c){return {'not-allowed':'Virhe: puheentunnistuksen tai mikrofonin käyttö estetty.','service-not-allowed':'Virhe: puheentunnistus ei ole sallittu tässä.','no-speech':'Virhe: puhetta ei tunnistettu.','network':'Virhe: tunnistus vaatii verkkoyhteyden.','language-not-supported':'Virhe: suomi ei ole tuettu tässä selaimessa.','audio-capture':'Virhe: ääntä ei saatu.'}[c]||('Virhe: '+c);}
+$('audioFile').addEventListener('change',function(){
+  var f=this.files&&this.files[0];if(!f)return;
+  if(audioUrl)URL.revokeObjectURL(audioUrl);
+  audioUrl=URL.createObjectURL(f);
+  var a=$('audioEl');a.src=audioUrl;a.classList.remove('hidden');
+  $('audioTx').disabled=!SR;
+  aStat(SR?'Ladattu: '+f.name+'. Paina Muunna tekstiksi.':'Selain ei tue puheentunnistusta. Kuuntele viesti ja kirjoita tai sanele se.');
+  this.value='';
+});
+$('audioTx').addEventListener('click',function(){
+  if(txRec){try{txRec.stop();}catch(e){}return;}
+  var a=$('audioEl');if(!a.src||!SR)return;
+  var r=new SR();r.lang='fi-FI';r.continuous=true;r.interimResults=true;
+  var base=$('her').value.trim();if(base)base+='\n';
+  var finals='',failed=false;
+  r.onresult=function(e){var tmp='';for(var i=e.resultIndex;i<e.results.length;i++){var x=e.results[i][0].transcript.trim();if(e.results[i].isFinal)finals+=(finals?' ':'')+x;else tmp+=x;}
+    $('her').value=base+finals+(tmp?' '+tmp:'');schedule();};
+  r.onerror=function(e){failed=true;aStat(errText(e.error));if(e.error==='not-allowed'||e.error==='service-not-allowed'){var env=micEnv();showMicHelp(env==='ok'?'denied':env);}};
+  r.onend=function(){txRec=null;$('audioTx').textContent='Muunna tekstiksi';try{a.pause();}catch(e){}
+    $('her').value=base+finals;check();
+    if(!failed)aStat(finals?'Valmis. Tarkista teksti, tunnistus voi tehdä virheitä.':'Tekstiä ei saatu. Kokeile uudelleen tai kirjoita viesti itse.');};
+  a.onended=function(){setTimeout(function(){if(txRec){try{txRec.stop();}catch(e){}}},1500);};
+  var track=null,mode='suora';
+  try{var cap=a.captureStream||a.mozCaptureStream;if(cap){var cs=cap.call(a);track=cs.getAudioTracks()[0]||null;}}catch(e){track=null;}
+  var started=false;
+  try{if(track){r.start(track);}else{mode='mikrofoni';r.start();}started=true;}
+  catch(e){try{mode='mikrofoni';r.start();started=true;}catch(e2){}}
+  if(!started){aStat('Muunnosta ei voitu käynnistää tässä selaimessa.');return;}
+  txRec=r;$('audioTx').textContent='⏹ Lopeta';
+  aStat(mode==='suora'?'Muunnetaan...':'Soitetaan kaiuttimesta, mikrofoni kuuntelee. Pidä ympäristö hiljaisena...');
+  try{a.currentTime=0;}catch(e){}
+  var pp=a.play();if(pp&&pp.catch)pp.catch(function(){aStat('Toisto ei käynnistynyt. Paina soittimen play-painiketta.');});
+});
+
+var deb;
+function schedule(){clearTimeout(deb);deb=setTimeout(check,350);}
+$('mine').addEventListener('input',schedule);
+$('her').addEventListener('input',schedule);
+
+$('fixBtn').addEventListener('click',function(){
+  var before=$('mine').value, after=mechanicalFix(before);
+  if(before===after){toast('Ei korjattavaa');return;}
+  $('mine').value=after;check();toast('Korjattu');
+});
+var clearArm=false;
+$('clearBtn').addEventListener('click',function(){
+  if(!clearArm){clearArm=true;this.textContent='Vahvista tyhjennys';var b=this;setTimeout(function(){clearArm=false;b.textContent='Tyhjennä';},3000);return;}
+  clearArm=false;this.textContent='Tyhjennä';$('mine').value='';$('her').value='';check();
+});
+
+// ---------- kopiointi ----------
+function copyText(txt,msg){
+  function fallback(){
+    var ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();
+    var ok=false;try{ok=document.execCommand('copy');}catch(e){}
+    document.body.removeChild(ta);toast(ok?msg:'Kopiointi ei onnistunut – valitse teksti ja kopioi käsin');
+  }
+  try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){toast(msg);},fallback);return;}}catch(e){}
+  fallback();
+}
+$('copyBtn').addEventListener('click',function(){
+  var t=$('mine').value.trim();if(!t){toast('Ei kopioitavaa');return;}
+  copyText(t,'Kopioitu – liitä WhatsAppiin tai TikTokiin');
+});
+
+// ---------- sanelu ----------
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition, rec=null, listening=false;
+function spokenPunct(s){
+  return s.replace(/(^|\s)pilkku(?=\s|$)/gi,',').replace(/(^|\s)piste(?=\s|$)/gi,'.')
+   .replace(/(^|\s)kysymysmerkki(?=\s|$)/gi,'?').replace(/(^|\s)huutomerkki(?=\s|$)/gi,'!')
+   .replace(/(^|\s)uusi rivi(?=\s|$)/gi,'\n');
+}
+function micMsg(m){$('micStatus').textContent=m;}
+var inFrame=false;try{inFrame=window.top!==window.self;}catch(e){inFrame=true;}
+function micEnv(){if(!SR)return 'nosr';if(inFrame)return 'frame';if(location.protocol==='file:')return 'file';if(window.isSecureContext===false)return 'insecure';return 'ok';}
+var HELP={
+ nosr:'<b>Selain ei tue sanelua.</b> Käytä Chromea tai näppäimistön mikrofonipainiketta.',
+ frame:'<b>Sivu on avattu claude.ai-linkistä.</b> Linkki estää mikrofonin, eikä sitä voi sallia.<br>Ratkaisu: napauta Oma vastaus -kenttää ja paina näppäimistön (Gboard) mikrofonipainiketta. Se toimii aina. Pysyvä ratkaisu: ks. Ohjeet → Sanelu ei toimi.',
+ file:'<b>Sivu on avattu tiedostona (file://).</b> Chrome ei yleensä salli puheentunnistusta tiedostona avatulla sivulla.<br>Ratkaisu tietokoneella: avaa komentorivi tiedoston kansiossa, aja <code>python -m http.server 8000</code> ja avaa Chromessa <code>http://localhost:8000/</code>.',
+ insecure:'<b>Sivu ei ole suojatussa osoitteessa.</b> Sanelu vaatii https-osoitteen tai localhostin.',
+ denied:'<b>Mikrofonin lupa on estetty.</b><br>1. Napauta osoiterivin vasemmassa reunassa olevaa kuvaketta.<br>2. Valitse Luvat tai Sivuston asetukset → Mikrofoni → Salli.<br>3. Lataa sivu uudelleen.<br>Android: tarkista myös Asetukset → Sovellukset → Chrome → Luvat → Mikrofoni → Salli.<br>Windows: Asetukset → Tietosuoja ja suojaus → Mikrofoni → salli.'
+};
+function showMicHelp(k){var el=$('micHelp');el.innerHTML=HELP[k]||'';el.classList.toggle('hidden',!HELP[k]);}
+(function(){var env=micEnv();
+ if(env!=='ok'){micMsg(env==='nosr'?'Sanelu ei ole käytettävissä.':'⚠ Sanelu estetty tässä avaustavassa.');showMicHelp(env);return;}
+ try{if(navigator.permissions&&navigator.permissions.query){navigator.permissions.query({name:'microphone'}).then(function(s){
+   function upd(){if(s.state==='denied'){micMsg('⚠ Mikrofonin lupa estetty.');showMicHelp('denied');}else{if($('micHelp').innerHTML===HELP.denied)showMicHelp('');}}
+   upd();s.onchange=upd;}).catch(function(){});}}catch(e){}
+})();
+$('micBtn').addEventListener('click',function(){
+  if(!SR){showMicHelp('nosr');toast('Käytä näppäimistön mikrofonipainiketta');return;}
+  if(listening){rec.stop();return;}
+  var env=micEnv();if(env!=='ok'){showMicHelp(env);toast('Sanelu estetty – katso ohje');return;}
+  rec=new SR();rec.lang='fi-FI';rec.continuous=true;rec.interimResults=true;
+  var base=$('mine').value;
+  rec.onstart=function(){showMicHelp('');listening=true;$('micBtn').classList.add('rec');$('micBtn').textContent='⏹ Lopeta';micMsg('Kuuntelen...');};
+  rec.onresult=function(e){
+    var fin='',tmp='';
+    for(var i=e.resultIndex;i<e.results.length;i++){var r=e.results[i][0].transcript;if(e.results[i].isFinal)fin+=r;else tmp+=r;}
+    if(fin){var add=spokenPunct(fin.trim());base=(base&&!/[\s\n]$/.test(base)&&!/^[,.!?]/.test(add)?base+' ':base)+add;}
+    $('mine').value=base+(tmp?' '+tmp:'');schedule();
+  };
+  rec.onerror=function(e){
+    var m={'not-allowed':'Mikrofonin käyttö estetty. Salli mikrofoni tai käytä näppäimistön mikrofonia.','service-not-allowed':'Sanelu ei ole sallittu tässä. Käytä näppäimistön mikrofonia.','no-speech':'Puhetta ei kuulunut.','network':'Sanelu vaatii verkkoyhteyden tässä selaimessa.','language-not-supported':'Suomi ei ole tuettu tässä selaimessa.'}[e.error]||('Virhe: '+e.error);
+    micMsg(m);
+    if(e.error==='not-allowed'||e.error==='service-not-allowed')showMicHelp('denied');
+  };
+  rec.onend=function(){listening=false;$('micBtn').classList.remove('rec');$('micBtn').textContent='🎤 Sanele';if($('micStatus').textContent==='Kuuntelen...')micMsg('');$('mine').value=base;check();};
+  try{rec.start();}catch(err){micMsg('Sanelua ei voitu käynnistää. Käytä näppäimistön mikrofonia.');}
+});
+
+// ---------- pitkä sanelu ----------
+var L={on:false,rec:null,start:0,elapsed:0,timer:null,restarts:0,recent:[],wake:null,lastStamp:-1,fatal:false,netErr:false,interim:''};
+var LKEY='viestiapu_long_v1';
+function lt(){return $('longText');}
+function fmt(ms){var s=Math.floor(ms/1000),hh=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (hh?hh+':'+String(m).padStart(2,'0'):String(m))+':'+String(x).padStart(2,'0');}
+function curElapsed(){return L.elapsed+(L.on?Date.now()-L.start:0);}
+function lSave(){try{localStorage.setItem(LKEY,JSON.stringify({text:lt().value,elapsed:curElapsed(),lastStamp:L.lastStamp}));}catch(e){lStat('⚠ Automaattinen tallennus epäonnistui – kopioi teksti talteen.');}}
+function lStat(m){$('longStatus').textContent=m;}
+function lCount(){var v=lt().value;$('longCount').textContent=(v.match(/\S+/g)||[]).length+' sanaa · '+v.length+' merkkiä';}
+function tick(){$('longTime').textContent=fmt(curElapsed());}
+function lHelp(k){var el=$('longHelp');el.innerHTML=HELP[k]||'';el.classList.toggle('hidden',!HELP[k]);}
+function wakeOn(){
+  if(!('wakeLock' in navigator)){$('wakeInfo').textContent='Selain ei voi pitää näyttöä päällä. Pidennä näytön aikakatkaisua puhelimen asetuksista.';return;}
+  navigator.wakeLock.request('screen').then(function(w){L.wake=w;$('wakeInfo').textContent='Näyttö pysyy päällä sanelun ajan.';w.addEventListener('release',function(){L.wake=null;});})
+  .catch(function(){$('wakeInfo').textContent='Näytön päälläpito ei onnistunut. Pidennä näytön aikakatkaisua.';});
+}
+function wakeOff(){try{if(L.wake)L.wake.release();}catch(e){}L.wake=null;$('wakeInfo').textContent='';}
+document.addEventListener('visibilitychange',function(){
+  if(!L.on)return;
+  if(document.visibilityState==='visible'){if(!L.wake)wakeOn();if(!L.rec)lStartRec();}
+  else lStat('⚠ Sovellus taustalla – tunnistus voi katketa. Palaa sovellukseen.');
+});
+function appendFinal(x){
+  x=spokenPunct(x);if(!x.trim())return;
+  var ta=lt(),v=ta.value,el=curElapsed();
+  if($('longStamps').checked&&(L.lastStamp<0||el-L.lastStamp>=300000)){v=v.replace(/\s+$/,'');v+=(v?'\n\n':'')+'['+fmt(el)+'] ';L.lastStamp=el;}
+  else if(v&&!/\s$/.test(v)&&!/^[,.!?\n]/.test(x))v+=' ';
+  if(!v.trim()||/[.!?]\s*$/.test(v)||/\]\s$/.test(v)||/\n\s*$/.test(v))x=x.charAt(0).toUpperCase()+x.slice(1);
+  var atBottom=ta.scrollHeight-ta.scrollTop-ta.clientHeight<60;
+  ta.value=v+x;if(atBottom)ta.scrollTop=ta.scrollHeight;
+  lSave();lCount();
+}
+function lStartRec(){
+  if(!L.on||L.rec)return;
+  var r=new SR();r.lang='fi-FI';r.continuous=true;r.interimResults=true;
+  r.onresult=function(e){var tmp='';
+    for(var i=e.resultIndex;i<e.results.length;i++){var x=e.results[i][0].transcript.trim();if(e.results[i].isFinal)appendFinal(x);else tmp+=x+' ';}
+    L.interim=tmp.trim();$('longInterim').textContent=L.interim;};
+  r.onerror=function(e){
+    if(e.error==='not-allowed'||e.error==='service-not-allowed'){L.fatal=true;var env=micEnv();lHelp(env==='ok'?'denied':env);}
+    else if(e.error==='language-not-supported'){L.fatal=true;lStat('Suomi ei ole tuettu tässä selaimessa.');}
+    else if(e.error==='network'){L.netErr=true;lStat('⚠ Verkkovirhe – yritetään uudelleen...');}
+    else if(e.error==='audio-capture'){L.netErr=true;lStat('⚠ Mikrofonista ei saatu ääntä – yritetään uudelleen...');}
+  };
+  r.onend=function(){
+    if(L.interim){appendFinal(L.interim);L.interim='';}
+    $('longInterim').textContent='';L.rec=null;
+    if(!L.on)return;
+    if(L.fatal){lStop();lStat('Sanelu pysäytetty – katso ohje.');return;}
+    var now=Date.now();L.recent=L.recent.filter(function(t){return now-t<10000;});L.recent.push(now);
+    var delay=L.netErr?3000:(L.recent.length>8?2000:250);L.netErr=false;
+    L.restarts++;$('longRestarts').textContent='Uudelleenkäynnistyksiä: '+L.restarts;
+    setTimeout(lStartRec,delay);
+  };
+  try{r.start();L.rec=r;lStat('🔴 Kuuntelen...');}
+  catch(e){setTimeout(lStartRec,1000);}
+}
+function lStop(){
+  L.elapsed=curElapsed();L.on=false;clearInterval(L.timer);
+  if(L.rec){try{L.rec.stop();}catch(e){}}
+  wakeOff();$('longBtn').textContent='▶ Jatka';$('longBtn').classList.remove('rec');$('longBtn').classList.add('pri');
+  tick();lSave();if(!L.fatal)lStat('Pysäytetty.');
+}
+$('longBtn').addEventListener('click',function(){
+  if(L.on){lStop();return;}
+  var env=micEnv();if(env!=='ok'){lHelp(env);return;}
+  lHelp('');
+  if(listening&&rec){try{rec.stop();}catch(e){}}
+  L.on=true;L.fatal=false;L.netErr=false;L.recent=[];L.start=Date.now();
+  L.timer=setInterval(tick,1000);wakeOn();
+  this.textContent='⏹ Pysäytä';this.classList.remove('pri');this.classList.add('rec');
+  lStartRec();
+});
+lt().addEventListener('input',function(){lSave();lCount();});
+$('longCopy').addEventListener('click',function(){var t=lt().value.trim();if(!t){toast('Ei kopioitavaa');return;}copyText(t,'Teksti kopioitu');});
+$('longDl').addEventListener('click',function(){
+  var t=lt().value;if(!t.trim()){toast('Ei ladattavaa');return;}
+  try{var d=new Date(),pad=function(n){return String(n).padStart(2,'0');};
+    var b=new Blob([t],{type:'text/plain;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(b);
+    a.download='sanelu-'+d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'-'+pad(d.getHours())+pad(d.getMinutes())+'.txt';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);toast('Ladattu');}catch(e){toast('Lataus ei onnistunut – käytä Kopioi');}
+});
+var lClearArm=false;
+$('longClear').addEventListener('click',function(){
+  if(L.on){toast('Pysäytä sanelu ensin');return;}
+  if(!lClearArm){lClearArm=true;this.textContent='Vahvista tyhjennys';var b=this;setTimeout(function(){lClearArm=false;b.textContent='Tyhjennä';},3000);return;}
+  lClearArm=false;this.textContent='Tyhjennä';
+  lt().value='';L.elapsed=0;L.lastStamp=-1;L.restarts=0;$('longRestarts').textContent='';$('longBtn').textContent='▶ Aloita';
+  tick();lSave();lCount();lStat('');
+});
+(function(){try{var s=JSON.parse(localStorage.getItem(LKEY)||'null');if(s){lt().value=s.text||'';L.elapsed=s.elapsed||0;L.lastStamp=typeof s.lastStamp==='number'?s.lastStamp:-1;if(L.elapsed)$('longBtn').textContent='▶ Jatka';}}catch(e){}tick();lCount();})();
+
+// ---------- henkilöt ----------
+function renderWho(){
+  var s=$('who');
+  s.innerHTML='<option value="">— ei valittu —</option>'+state.people.map(function(p){return '<option value="'+esc(p.id)+'">'+esc(p.name||'(nimetön)')+' · '+esc(p.ch)+'</option>';}).join('');
+  s.value=person(state.current)?state.current:'';
+  var p=person(s.value);
+  $('whoInfo').innerHTML=p?[p.int?'Kiinnostaa: '+esc(p.int):'',p.dates?'Päivät: '+esc(p.dates):''].filter(Boolean).join('<br>'):'';
+}
+$('who').addEventListener('change',function(){state.current=this.value;save();renderWho();});
+
+function renderPeople(){
+  if(!state.people.length){$('people').innerHTML='<p class="mut">Ei vielä henkilöitä.</p>';return;}
+  $('people').innerHTML=state.people.map(function(p){
+    var hist=(p.hist||[]).slice(-20).reverse();
+    return '<div class="card"><div class="person"><div><span class="nm">'+esc(p.name||'(nimetön)')+'</span> <span class="mut">'+esc(p.ch)+'</span></div>'+
+      '<button class="btn" data-edit="'+esc(p.id)+'">Muokkaa</button></div>'+
+      (p.int?'<p class="mut" style="margin:6px 0 0">Kiinnostaa: '+esc(p.int)+'</p>':'')+
+      (p.told?'<p class="mut" style="margin:4px 0 0;white-space:pre-wrap">Kertonut: '+esc(p.told)+'</p>':'')+
+      (p.dates?'<p class="mut" style="margin:4px 0 0;white-space:pre-wrap">Päivät: '+esc(p.dates)+'</p>':'')+
+      (p.notes?'<p class="mut" style="margin:4px 0 0;white-space:pre-wrap">Muistiinpanot: '+esc(p.notes)+'</p>':'')+
+      (hist.length?'<details class="hist"><summary>Historia ('+(p.hist||[]).length+')</summary>'+hist.map(function(x){
+        return '<div class="h"><span class="t">'+esc(new Date(x.t).toLocaleString('fi-FI'))+'</span>'+(x.her?'\nHän: '+esc(x.her):'')+'\nMinä: '+esc(x.me)+'</div>';
+      }).join('')+'</details>':'')+'</div>';
+  }).join('');
+}
+$('people').addEventListener('click',function(e){var id=e.target.getAttribute&&e.target.getAttribute('data-edit');if(id)openEditor(person(id));});
+
+function openEditor(p){
+  $('editor').classList.remove('hidden');
+  $('pId').value=p?p.id:'';$('pName').value=p?p.name:'';$('pCh').value=p?p.ch:'WhatsApp';
+  $('pInt').value=p?p.int:'';$('pTold').value=p?p.told:'';$('pDates').value=p?p.dates:'';$('pNotes').value=p?p.notes:'';
+  $('pDel').style.display=p?'':'none';$('pDel').textContent='Poista';delArm=false;
+  $('pName').focus();window.scrollTo(0,0);
+}
+$('newPerson').addEventListener('click',function(){openEditor(null);});
+$('pCancel').addEventListener('click',function(){$('editor').classList.add('hidden');});
+$('pSave').addEventListener('click',function(){
+  var id=$('pId').value, p=person(id);
+  if(!p){p={id:uid(),hist:[]};state.people.push(p);}
+  p.name=$('pName').value.trim();p.ch=$('pCh').value;p.int=$('pInt').value.trim();p.told=$('pTold').value.trim();p.dates=$('pDates').value.trim();p.notes=$('pNotes').value.trim();
+  save();$('editor').classList.add('hidden');renderPeople();renderWho();toast('Tallennettu');
+});
+var delArm=false;
+$('pDel').addEventListener('click',function(){
+  if(!delArm){delArm=true;this.textContent='Vahvista poisto';return;}
+  var id=$('pId').value;state.people=state.people.filter(function(p){return p.id!==id;});
+  if(state.current===id)state.current='';
+  save();$('editor').classList.add('hidden');renderPeople();renderWho();toast('Poistettu');
+});
+
+$('saveHistBtn').addEventListener('click',function(){
+  var p=person($('who').value), t=$('mine').value.trim();
+  if(!p){toast('Valitse ensin keskustelukumppani');return;}
+  if(!t){toast('Ei tallennettavaa');return;}
+  p.hist=p.hist||[];p.hist.push({t:Date.now(),her:$('her').value.trim(),me:t});
+  if(p.hist.length>200)p.hist=p.hist.slice(-200);
+  save();renderPeople();toast('Tallennettu historiaan');
+});
+
+// ---------- varmuuskopio ----------
+function exportJson(){return JSON.stringify({app:'viestiapu',v:1,exported:new Date().toISOString(),data:state},null,1);}
+$('expBtn').addEventListener('click',function(){
+  try{var b=new Blob([exportJson()],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);
+    a.download='viestiapu-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();document.body.removeChild(a);
+    toast('Ladattu');}catch(e){toast('Lataus ei onnistunut – käytä Kopioi tiedot');}
+});
+$('expCopy').addEventListener('click',function(){copyText(exportJson(),'Tiedot kopioitu');});
+$('impFile').addEventListener('change',function(){
+  var f=this.files&&this.files[0];if(!f)return;var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);var s=d&&d.data?d.data:d;
+    if(!s||!Array.isArray(s.people))throw 0;
+    var n=0;s.people.forEach(function(p){if(p&&p.id&&!person(p.id)){state.people.push(p);n++;}});
+    save();renderPeople();renderWho();toast('Tuotu '+n+' uutta henkilöä');}catch(e){toast('Tiedosto ei kelpaa');}};
+  r.readAsText(f);this.value='';
+});
+
+load();renderWho();renderPeople();check();
+})();
+</script>
+</body>
+</html>
