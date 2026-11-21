@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Viestiapu v1.1.1</title>
+<title>Viestiapu v1.4.1</title>
 <style>
 :root{--bg:#14171c;--card:#1d2128;--line:#2c323c;--txt:#e7e9ee;--mut:#9aa3b2;--acc:#4f9cf7;--ok:#3fbf7f;--warn:#e8b33f;--err:#e5534b;--tip:#8b7cf6}
 *{box-sizing:border-box}
@@ -13,7 +13,7 @@ header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px so
 .top h1{font-size:18px;margin:0}
 .ver{color:var(--mut);font-size:12px}
 nav{display:flex}
-nav button{flex:1;background:none;border:0;border-bottom:3px solid transparent;color:var(--mut);padding:10px 4px;font-size:15px;cursor:pointer}
+nav button{flex:1;white-space:nowrap;background:none;border:0;border-bottom:3px solid transparent;color:var(--mut);padding:10px 4px;font-size:15px;cursor:pointer}
 nav button.on{color:var(--txt);border-color:var(--acc)}
 main{max-width:720px;margin:0 auto;padding:12px 14px}
 .sec{display:none}.sec.on{display:block}
@@ -48,6 +48,20 @@ textarea{resize:vertical}
 .guide .src{color:var(--mut);font-size:12px}
 .note{background:#2a2410;border:1px solid #5a4a14;border-radius:10px;padding:10px;font-size:14px;margin-top:10px}
 .hidden{display:none}
+.crit{list-style:none;padding:0;margin:8px 0 0}
+.crit li{padding:6px 0;border-bottom:1px solid var(--line);font-size:15px}
+.crit li .src{color:var(--mut);font-size:12px;display:block}
+.big{font-size:28px;font-weight:700}
+#prMsg{font-size:18px;margin:6px 0}
+.say{padding:4px 10px;font-size:13px;border-radius:14px;margin-left:6px;vertical-align:middle}
+.lblrow{display:flex;align-items:center;justify-content:space-between;margin:12px 0 4px}
+.lblrow label{margin:0}
+#ttsStop{position:fixed;top:10px;right:10px;z-index:20;background:var(--err);border-color:var(--err);color:#fff;font-weight:600}
+#longTime{font-size:32px;font-weight:700;font-variant-numeric:tabular-nums}
+#longText{min-height:300px;font-size:16px}
+#longInterim{color:var(--mut);font-style:italic;min-height:1.4em;font-size:14px;margin-top:4px}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--txt);margin:8px 0 0}
+.chk input{width:auto}
 .chip{display:inline-block;margin:4px 4px 0 0;padding:6px 10px;border-radius:16px;background:#26303d;border:1px solid var(--line);color:var(--txt);font:inherit;font-size:14px;cursor:pointer}
 .an{border-left:4px solid var(--tip)}
 .an .src{color:var(--mut);font-size:12px}
@@ -55,9 +69,11 @@ textarea{resize:vertical}
 </head>
 <body>
 <header>
-  <div class="top"><h1>Viestiapu</h1><span class="ver">v1.1.1 · ei API-avainta</span></div>
+  <div class="top"><h1>Viestiapu</h1><span class="ver">v1.4.1 · ei API-avainta</span></div>
   <nav>
     <button data-tab="kirjoita" class="on">Kirjoita</button>
+    <button data-tab="harjoittele">Harjoittele</button>
+    <button data-tab="sanelu">Sanelu</button>
     <button data-tab="muistio">Muistio</button>
     <button data-tab="ohjeet">Ohjeet</button>
   </nav>
@@ -81,12 +97,12 @@ textarea{resize:vertical}
     <div id="audioStatus" class="mut"></div>
   </div>
 
-  <label for="her">Hänen viestinsä (valinnainen, liitä tähän)</label>
+  <div class="lblrow"><label for="her">Hänen viestinsä (valinnainen, liitä tähän)</label><button class="btn say" data-say="#her">🔊 Lue</button></div>
   <textarea id="her" rows="3" spellcheck="false" placeholder="Liitä hänen viimeisin viestinsä..."></textarea>
   <div id="herQ"></div>
   <div id="analysis"></div>
 
-  <label for="mine">Oma vastaus</label>
+  <div class="lblrow"><label for="mine">Oma vastaus</label><button class="btn say" data-say="#mine">🔊 Lue</button></div>
   <textarea id="mine" lang="fi" spellcheck="true" autocapitalize="sentences" placeholder="Kirjoita tai sanele..."></textarea>
   <div class="row">
     <button class="btn" id="micBtn">🎤 Sanele</button>
@@ -100,8 +116,71 @@ textarea{resize:vertical}
     <button class="btn danger" id="clearBtn">Tyhjennä</button>
   </div>
   <ul class="res" id="results"></ul>
-  <p class="mut">Sanelussa voit sanoa: <i>pilkku, piste, kysymysmerkki, huutomerkki, uusi rivi</i>.<br>
+  <p class="mut">Sanelussa voit sanoa: <i>pilkku, piste, kysymysmerkki, huutomerkki, kaksoispiste, uusi rivi</i>.<br>
   Yksittäisten sanojen kirjoitusvirheet näkyvät punaisella alleviivauksella, jos laitteen oikoluku tukee suomea. Androidissa se on näppäimistön (esim. Gboard) asetuksissa.</p>
+</section>
+
+<!-- HARJOITTELE -->
+<section id="harjoittele" class="sec">
+  <div class="card">
+    <b>Harjoittele vastaamista</b>
+    <p class="mut" style="margin:4px 0">Saat viestin kuin oikeassa keskustelussa. Vastaa kirjoittamalla tai sanelemalla. Sovellus mittaa vastausajan ja tarkistaa vastauksen samoilla tutkimuksiin perustuvilla kriteereillä kuin Kirjoita-välilehti. Sovellus antaa useammin viestejä, joissa sinulla on ollut eniten puutteita.</p>
+    <label class="chk"><input type="checkbox" id="prRead" checked> Lue viesti ääneen</label>
+    <div class="row"><button class="btn pri" id="prNew">▶ Uusi viesti</button></div>
+  </div>
+  <div id="prBox" class="hidden">
+    <div class="card an">
+      <span class="mut" id="prCat"></span>
+      <p id="prMsg"></p>
+      <div class="row" style="margin-top:0"><button class="btn say" data-say="#prMsg" style="margin-left:0">🔊 Kuuntele</button><span id="prTimer" class="big" style="margin-left:auto"></span></div>
+    </div>
+    <div class="lblrow"><label for="prMine">Vastauksesi</label><button class="btn say" data-say="#prMine">🔊 Lue</button></div>
+    <textarea id="prMine" lang="fi" spellcheck="true" rows="4" placeholder="Vastaa kuin oikeasti vastaisit..."></textarea>
+    <div class="row"><button class="btn" id="prMic">🎤 Sanele</button><span id="prMicStatus" class="mut"></span></div>
+    <div class="row"><button class="btn pri" id="prDone">✓ Valmis – arvioi</button></div>
+    <div id="prResult"></div>
+  </div>
+  <div class="card">
+    <b>Edistyminen</b>
+    <div id="prStats" class="mut" style="margin-top:4px"></div>
+    <div class="row"><button class="btn danger" id="prReset">Nollaa tilastot</button></div>
+  </div>
+</section>
+
+<!-- PITKÄ SANELU -->
+<section id="sanelu" class="sec">
+  <div class="card">
+    <div class="row" style="margin-top:0">
+      <span id="longTime">0:00</span>
+      <button class="btn pri" id="longBtn" style="margin-left:auto">▶ Aloita</button>
+    </div>
+    <div id="longStatus" class="mut"></div>
+    <div id="wakeInfo" class="mut"></div>
+    <div class="mut" id="longRestarts"></div>
+    <div class="mut" id="longLast"></div>
+    <label class="chk"><input type="checkbox" id="longStamps" checked> Aikaleima 5 minuutin välein</label>
+  </div>
+  <div id="longHelp" class="note hidden"></div>
+  <div id="tabWarn" class="note hidden"><b>Viestiapu on auki myös toisessa välilehdessä.</b> Sulje muut Viestiapu-välilehdet. Ne voivat katkaista sanelun, ja niiden ääneen luku päätyy mikrofoniin.</div>
+  <div class="lblrow"><label for="longText">Teksti (tallentuu automaattisesti)</label><button class="btn say" data-say="#longText">🔊 Lue</button></div>
+  <textarea id="longText" lang="fi" spellcheck="true"></textarea>
+  <div id="longInterim"></div>
+  <div class="row">
+    <span id="longCount" class="mut"></span>
+  </div>
+  <div class="row">
+    <button class="btn" id="longCopy">Kopioi</button>
+    <button class="btn" id="longDl">Lataa .txt</button>
+    <button class="btn danger" id="longClear">Tyhjennä</button>
+  </div>
+  <div class="note">
+    <b>Hyvä tietää</b><br>
+    • Chrome katkaisee tunnistuksen itse noin minuutin välein tai hiljaisuuden jälkeen. Sovellus käynnistää sen heti uudelleen, mutta katkon kohdalta voi pudota sana tai pari.<br>
+    • Pidä sovellus auki edessä. Taustalla tai lukitulla näytöllä tunnistus pysähtyy.<br>
+    • Puhelin lähelle puhujia. Kaukaa ja päällekkäin puhuttu tunnistuu huonosti. Sovellus ei erota puhujia.<br>
+    • Tarvitsee verkkoyhteyden koko ajan. Kytke laturi pitkää sanelua varten.<br>
+    • Tarkista työpaikalla, saako palaverin keskustelun tallentaa.
+  </div>
 </section>
 
 <!-- MUISTIO -->
@@ -137,6 +216,15 @@ textarea{resize:vertical}
 
 <!-- OHJEET -->
 <section id="ohjeet" class="sec guide">
+  <div class="card">
+    <b>Puheääni</b>
+    <label for="ttsVoice">Ääni</label>
+    <select id="ttsVoice"></select>
+    <div id="ttsInfo" class="mut" style="margin-top:4px"></div>
+    <label for="ttsRate">Nopeus: <span id="ttsRateV">1.0</span></label>
+    <input type="range" id="ttsRate" min="0.5" max="1.5" step="0.1" value="1" style="padding:0">
+    <div class="row"><button class="btn" id="ttsTest">🔊 Testaa ääni</button><button class="btn say" data-say="#ohjeet" style="margin-left:0">🔊 Lue ohjeet</button></div>
+  </div>
   <div class="note">Alla on vertaisarvioituja tutkimustuloksia. Ne kuvaavat keskimääräisiä vaikutuksia ryhmissä eivätkä takaa lopputulosta yksittäisessä keskustelussa. Sovelluksen tarkistukset, joissa ei ole lähdettä, ovat sääntöpohjaisia muistutuksia, eivät tutkimustuloksia.</div>
 
   <h3>1. Kysy jatkokysymyksiä</h3>
@@ -164,6 +252,10 @@ textarea{resize:vertical}
   <p class="src">Gottman & DeClaire (2001). The Relationship Cure. Taustalla Gottmanin pitkittäistutkimukset vastanaineista pareista.</p>
   <p><b>Käytännössä:</b> jos hän lähettää kuvan tai linkin, kommentoi sitä, älä ohita.</p>
 
+  <h3>Harjoittele-välilehti</h3>
+  <p>Harjoituksessa tulee esimerkkiviestejä eri tilanteista: hyvä uutinen, huono päivä, kysymys sinusta, tapaamisehdotus, jaettu kuva tai biisi, kehu ja kiire. Vastauksesi tarkistetaan samoilla kriteereillä kuin Kirjoita-välilehdellä, ja sovellus mittaa vastausajan. Tilastoista näet, nopeutuuko vastaaminen ja paraneeko kriteerien täyttyminen.</p>
+  <p>Esimerkkivastaus on yksi mahdollinen tapa vastata, ei ainoa oikea. Kriteerit ovat karkeita sanahakuja. Ne eivät ymmärrä vastauksen merkitystä.</p>
+
   <h3>Ääniviestin lataaminen sovellukseen</h3>
   <p><b>Tietokone:</b> avaa WhatsApp Web tai työpöytäsovellus, lataa ääniviesti viestin valikosta ja valitse tiedosto sovelluksessa.</p>
   <p><b>Android:</b> jaa tai tallenna ääniviesti WhatsAppista tiedostoksi ja valitse se sovelluksessa.</p>
@@ -182,7 +274,7 @@ textarea{resize:vertical}
   <p>Samat periaatteet pätevät: jatkokysymykset, hänen sanoihinsa viittaaminen ja vastavuoroinen kertominen. Sovellusta ei ole tehty käytettäväksi kesken kasvokkaisen keskustelun. Käytä Muistiota ennen tapaamista ja sen jälkeen.</p>
 
   <h3>Versiot</h3>
-  <p class="mut">v1.1.1 – Sanelun vianmääritys: sovellus kertoo, miksi mikrofoni on estetty, ja antaa korjausohjeet.<br>v1.1.0 – Ääniviestin muunnos tekstiksi, hänen viestinsä analyysi ja lisättävät vastausehdotukset.<br>v1.0 – Ensimmäinen versio.</p>
+  <p class="mut">v1.4.1 – Sanelun välimerkit: "pilkku" tunnistetaan myös taivutettuna (pilkun, pilkkua) ja välimerkin vieressä, lisätty "kaksoispiste" ja "uusi kappale", isot alkukirjaimet pisteen jälkeen, välilyönnit korjataan automaattisesti. Muunnos toimii myös puhelimen näppäimistön (Gboard) mikrofonilla.<br>v1.4.0 – Uusi Harjoittele-välilehti: viestit luetaan ääneen, vastausaika mitataan, arvio tutkimuskriteereillä, esimerkkivastaus, edistymisen seuranta, viestit painottuvat heikoimpiin tilanteisiin. Kirjoita-välilehdellä luonnos säilyy sivun uudelleenlatauksessa, Kopioi tallentaa vastauksen valitun henkilön historiaan, henkilön tiedot ja edellinen viestinvaihto näkyvät, kysymys tunnistetaan myös ilman kysymysmerkkiä (esim. "oletko", "mitä"). "Pitkä sanelu" -välilehden nimi on nyt "Sanelu".<br>v1.3.1 – Pitkä sanelu: vahtikoira käynnistää jumittuneen tunnistuksen uudelleen, jumiin jäänyt keskeneräinen teksti tallennetaan, "viimeisin tunnistus" -näyttö, varoitus jos sovellus on auki useassa välilehdessä, ääneen luku pysähtyy muissa välilehdissä sanelun ajaksi.<br>v1.3.0 – Ääneen luku: 🔊-painikkeet viesteille, vastaukselle, sanelulle, analyysille, muistiolle ja ohjeille. Äänen valinta (Noora valitaan automaattisesti, jos selaimessa on), nopeus ja Lopeta puhe -painike.<br>v1.2.0 – Pitkä sanelu -välilehti: automaattinen uudelleenkäynnistys, kello, aikaleimat, automaattinen tallennus, näytön päälläpito, kopiointi ja .txt-lataus.<br>v1.1.1 – Sanelun vianmääritys: sovellus kertoo, miksi mikrofoni on estetty, ja antaa korjausohjeet.<br>v1.1.0 – Ääniviestin muunnos tekstiksi, hänen viestinsä analyysi ja lisättävät vastausehdotukset.<br>v1.0 – Ensimmäinen versio.</p>
 </section>
 </main>
 
@@ -190,6 +282,7 @@ textarea{resize:vertical}
   <button class="btn pri" id="copyBtn">Kopioi vastaus</button>
 </div>
 <div id="toast"></div>
+<button class="btn hidden" id="ttsStop">⏹ Lopeta puhe</button>
 
 <script>
 (function(){
@@ -267,11 +360,25 @@ function mechanicalFix(t){
   return o.trim();
 }
 
+var QWORD=/(^|[\s.,!;:])(mitä|miten|missä|milloin|mikä|mitkä|kuka|ketkä|miksi|mihin|mistä|kenen|kenelle|millainen|millaista|millaisia|kumpi|paljonko|kauanko|montako|mites|mitäs|kukas|entä|entäs)(?![\p{L}])/iu;
+var QNOT={koko:1,joko:1};
+function hasQuestion(t){
+  if(/\?/.test(t)||QWORD.test(t))return true;
+  var w=(t.toLowerCase().match(/\p{L}+/gu)||[]);
+  for(var i=0;i<w.length;i++){if(QNOT[w[i]])continue;if(/[^k]k[oö](s|han|hän)?$/u.test(w[i])&&w[i].length>=4)return true;}
+  return false;
+}
 function check(){
-  var t=$('mine').value, h=$('her').value, R=[];
+  var t=$('mine').value, h=$('her').value;
+  saveDraft();
   $('count').textContent=t.length?t.length+' merkkiä':'';
   renderHerQ(h);renderAnalysis(h);
   if(!t.trim()){$('results').innerHTML='';return;}
+  var R=evaluate(t,h);
+  $('results').innerHTML=R.map(function(r){return '<li class="'+r[0]+'"><b>'+esc(r[1])+'</b>'+esc(r[2])+(r[3]?'<span class="src">Lähde: '+esc(r[3])+'</span>':'')+'</li>';}).join('');
+}
+function evaluate(t,h){
+  var R=[];
 
   // kirjoitusasu
   var ms=findMisspell(t);
@@ -304,14 +411,18 @@ function check(){
 
   // tutkimuspohjaiset
   if(h.trim()){
-    if(qn===0)R.push(['tip','Ei kysymystä','Jatkokysymys siihen, mitä hän kertoi, lisäsi tutkimuksessa koettua pitämistä.','Huang ym. 2017']);
+    if(!hasQuestion(t))R.push(['tip','Ei kysymystä','Jatkokysymys siihen, mitä hän kertoi, lisäsi tutkimuksessa koettua pitämistä.','Huang ym. 2017']);
     var hs=stems(h), ts=stems(t), hk=Object.keys(hs), shared=hk.filter(function(k){return ts[k];});
     if(hk.length>=3&&shared.length===0)R.push(['tip','Ei viittausta hänen viestiinsä','Vastauksessa ei ole yhtään hänen viestinsä sisältösanoista. Viittaa hänen sanomaansa, jotta hän kokee tulleensa kuulluksi.','Reis & Shaver 1988']);
   }
 
   if(!R.length)R.push(['ok','Ei huomautettavaa','Tarkistukset eivät löytäneet mitään. Lue viesti silti kerran itse ennen lähettämistä.']);
-  $('results').innerHTML=R.map(function(r){return '<li class="'+r[0]+'"><b>'+esc(r[1])+'</b>'+esc(r[2])+(r[3]?'<span class="src">Lähde: '+esc(r[3])+'</span>':'')+'</li>';}).join('');
+  return R;
 }
+// luonnos säilyy
+var DKEY='viestiapu_draft_v1';
+function saveDraft(){try{localStorage.setItem(DKEY,JSON.stringify({her:$('her').value,mine:$('mine').value}));}catch(e){}}
+function loadDraft(){try{var d=JSON.parse(localStorage.getItem(DKEY)||'null');if(d){$('her').value=d.her||'';$('mine').value=d.mine||'';}}catch(e){}}
 function renderHerQ(h){
   var qs=sentences(h).filter(function(s){return /\?$/.test(s);});
   $('herQ').innerHTML=qs.length?'<div class="card"><b>Hän kysyi – vastasitko näihin?</b><ul class="qs">'+qs.map(function(q){return '<li>'+esc(q)+'</li>';}).join('')+'</ul></div>':'';
@@ -323,7 +434,7 @@ var PLAN=/(^|[^\p{L}])(huomenna|ylihuomenna|viikonloppuna|ensi viikolla|tänä i
 var MEDIA=/(^|[^\p{L}])(kuva|kuvan|kuvia|video\p{L}*|linkki\p{L}*|katso|kato|biisi\p{L}*|kappale\p{L}*)(?![\p{L}])/iu;
 var FOLLOW=['Miten se meni?','Miltä se tuntui?','Mitä sitten tapahtui?','Mikä siinä on parasta?','Miten päädyit siihen?','Kerro lisää!'];
 function chips(arr){return arr.map(function(c){return '<button class="chip" data-ins="'+esc(c)+'">'+esc(c.trim())+'</button>';}).join('');}
-function block(title,text,src,arr){return '<div class="card an"><b>'+esc(title)+'</b><p style="margin:4px 0;font-size:14px">'+esc(text)+'</p>'+(src?'<div class="src">Lähde: '+esc(src)+'</div>':'')+(arr?'<div>'+chips(arr)+'</div>':'')+'</div>';}
+function block(title,text,src,arr){return '<div class="card an"><b>'+esc(title)+'</b><button class="btn say" data-say="card">🔊</button><p style="margin:4px 0;font-size:14px">'+esc(text)+'</p>'+(src?'<div class="src">Lähde: '+esc(src)+'</div>':'')+(arr?'<div>'+chips(arr)+'</div>':'')+'</div>';}
 function renderAnalysis(h){
   if(!h.trim()){$('analysis').innerHTML='';return;}
   var out=[];
@@ -407,15 +518,32 @@ function copyText(txt,msg){
 }
 $('copyBtn').addEventListener('click',function(){
   var t=$('mine').value.trim();if(!t){toast('Ei kopioitavaa');return;}
-  copyText(t,'Kopioitu – liitä WhatsAppiin tai TikTokiin');
+  var p=person($('who').value),saved=false;
+  if(p){p.hist=p.hist||[];var last=p.hist[p.hist.length-1];
+    if(!last||last.me!==t){p.hist.push({t:Date.now(),her:$('her').value.trim(),me:t});if(p.hist.length>200)p.hist=p.hist.slice(-200);save();renderPeople();renderWho();}
+    saved=true;}
+  copyText(t,saved?'Kopioitu ja tallennettu '+(p.name||'henkilön')+' historiaan':'Kopioitu – liitä WhatsAppiin tai TikTokiin');
 });
 
 // ---------- sanelu ----------
 var SR=window.SpeechRecognition||window.webkitSpeechRecognition, rec=null, listening=false;
+var PUNCT=[
+ [/(^|\s)(kaksoispiste|kaksois piste)(?=[\s.,!?:]|$)/giu,':'],
+ [/(^|\s)(pilkku|pilkkua|pilkkuu)(?=[\s.,!?:]|$)/giu,','],
+ [/(^|\s)(piste)(?=[\s.,!?:]|$)/giu,'.'],
+ [/(^|\s)(kysymysmerkki|kysymys merkki|kysymysmerkin)(?=[\s.,!?:]|$)/giu,'?'],
+ [/(^|\s)(huutomerkki|huuto merkki|huutomerkin)(?=[\s.,!?:]|$)/giu,'!'],
+ [/(^|\s)(uusi rivi|uusi kappale)(?=[\s.,!?:]|$)/giu,'\n']
+];
 function spokenPunct(s){
-  return s.replace(/(^|\s)pilkku(?=\s|$)/gi,',').replace(/(^|\s)piste(?=\s|$)/gi,'.')
-   .replace(/(^|\s)kysymysmerkki(?=\s|$)/gi,'?').replace(/(^|\s)huutomerkki(?=\s|$)/gi,'!')
-   .replace(/(^|\s)uusi rivi(?=\s|$)/gi,'\n');
+  PUNCT.forEach(function(m){s=s.replace(m[0],m[1]);});
+  return s.replace(/[ \t]+([,.!?:])/g,'$1')
+   .replace(/,\s*([.!?])/g,'$1')
+   .replace(/([.!?])[ \t]*\.+/g,'$1')
+   .replace(/,{2,}/g,',')
+   .replace(/([,.!?:])(?=[^\s\d,.!?:)\n])/g,'$1 ')
+   .replace(/([.!?]\s+)(\p{Ll})/gu,function(m,a,b){return a+b.toUpperCase();})
+   .replace(/\n[ \t]+/g,'\n');
 }
 function micMsg(m){$('micStatus').textContent=m;}
 var inFrame=false;try{inFrame=window.top!==window.self;}catch(e){inFrame=true;}
@@ -434,26 +562,355 @@ function showMicHelp(k){var el=$('micHelp');el.innerHTML=HELP[k]||'';el.classLis
    function upd(){if(s.state==='denied'){micMsg('⚠ Mikrofonin lupa estetty.');showMicHelp('denied');}else{if($('micHelp').innerHTML===HELP.denied)showMicHelp('');}}
    upd();s.onchange=upd;}).catch(function(){});}}catch(e){}
 })();
-$('micBtn').addEventListener('click',function(){
-  if(!SR){showMicHelp('nosr');toast('Käytä näppäimistön mikrofonipainiketta');return;}
-  if(listening){rec.stop();return;}
-  var env=micEnv();if(env!=='ok'){showMicHelp(env);toast('Sanelu estetty – katso ohje');return;}
+function dictToggle(ta,btn,statusEl,onUpdate,isMain){
+  if(!SR){if(isMain)showMicHelp('nosr');toast('Käytä näppäimistön mikrofonipainiketta');return;}
+  if(listening){try{rec.stop();}catch(e){}return;}
+  if(typeof L!=='undefined'&&L.on){toast('Pitkä sanelu on käynnissä');return;}
+  var env=micEnv();if(env!=='ok'){if(isMain)showMicHelp(env);statusEl.textContent='⚠ Sanelu estetty tässä avaustavassa – ks. Ohjeet.';toast('Sanelu estetty – katso ohje');return;}
+  if(TTS&&TTS.ok)ttsStop();
   rec=new SR();rec.lang='fi-FI';rec.continuous=true;rec.interimResults=true;
-  var base=$('mine').value;
-  rec.onstart=function(){showMicHelp('');listening=true;$('micBtn').classList.add('rec');$('micBtn').textContent='⏹ Lopeta';micMsg('Kuuntelen...');};
+  var base=ta.value;
+  rec.onstart=function(){if(isMain)showMicHelp('');listening=true;btn.classList.add('rec');btn.textContent='⏹ Lopeta';statusEl.textContent='Kuuntelen...';};
   rec.onresult=function(e){
     var fin='',tmp='';
     for(var i=e.resultIndex;i<e.results.length;i++){var r=e.results[i][0].transcript;if(e.results[i].isFinal)fin+=r;else tmp+=r;}
     if(fin){var add=spokenPunct(fin.trim());base=(base&&!/[\s\n]$/.test(base)&&!/^[,.!?]/.test(add)?base+' ':base)+add;}
-    $('mine').value=base+(tmp?' '+tmp:'');schedule();
+    ta.value=base+(tmp?' '+tmp:'');if(onUpdate)onUpdate();
   };
   rec.onerror=function(e){
     var m={'not-allowed':'Mikrofonin käyttö estetty. Salli mikrofoni tai käytä näppäimistön mikrofonia.','service-not-allowed':'Sanelu ei ole sallittu tässä. Käytä näppäimistön mikrofonia.','no-speech':'Puhetta ei kuulunut.','network':'Sanelu vaatii verkkoyhteyden tässä selaimessa.','language-not-supported':'Suomi ei ole tuettu tässä selaimessa.'}[e.error]||('Virhe: '+e.error);
-    micMsg(m);
-    if(e.error==='not-allowed'||e.error==='service-not-allowed')showMicHelp('denied');
+    statusEl.textContent=m;
+    if(isMain&&(e.error==='not-allowed'||e.error==='service-not-allowed'))showMicHelp('denied');
   };
-  rec.onend=function(){listening=false;$('micBtn').classList.remove('rec');$('micBtn').textContent='🎤 Sanele';if($('micStatus').textContent==='Kuuntelen...')micMsg('');$('mine').value=base;check();};
-  try{rec.start();}catch(err){micMsg('Sanelua ei voitu käynnistää. Käytä näppäimistön mikrofonia.');}
+  rec.onend=function(){listening=false;btn.classList.remove('rec');btn.textContent='🎤 Sanele';if(statusEl.textContent==='Kuuntelen...')statusEl.textContent='';ta.value=base;if(onUpdate)onUpdate();};
+  try{rec.start();}catch(err){statusEl.textContent='Sanelua ei voitu käynnistää. Käytä näppäimistön mikrofonia.';}
+}
+$('micBtn').addEventListener('click',function(){dictToggle($('mine'),this,$('micStatus'),schedule,true);});
+// Näppäimistön (esim. Gboard) sanelu: muunna sanotut välimerkit, kun sana on valmis
+function punctOnInput(ta){
+  ta.addEventListener('input',function(){
+    if(listening)return;
+    var v=ta.value;if(!PUNCT.some(function(m){m[0].lastIndex=0;return m[0].test(v);}))return;
+    PUNCT.forEach(function(m){m[0].lastIndex=0;});
+    var atEnd=ta.selectionStart===v.length,nv=spokenPunct(v);
+    if(nv===v)return;
+    ta.value=nv;if(atEnd){try{ta.setSelectionRange(nv.length,nv.length);}catch(e){}}
+    ta.dispatchEvent(new Event('input'));
+  });
+}
+punctOnInput($('mine'));
+
+// ---------- pitkä sanelu ----------
+var L={pendingStart:false,recStart:0,lastResult:0,lastFinal:0,interimAt:0,on:false,rec:null,start:0,elapsed:0,timer:null,restarts:0,recent:[],wake:null,lastStamp:-1,fatal:false,netErr:false,interim:''};
+var LKEY='viestiapu_long_v1';
+function lt(){return $('longText');}
+function fmt(ms){var s=Math.floor(ms/1000),hh=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (hh?hh+':'+String(m).padStart(2,'0'):String(m))+':'+String(x).padStart(2,'0');}
+function curElapsed(){return L.elapsed+(L.on?Date.now()-L.start:0);}
+function lSave(){try{localStorage.setItem(LKEY,JSON.stringify({text:lt().value,elapsed:curElapsed(),lastStamp:L.lastStamp}));}catch(e){lStat('⚠ Automaattinen tallennus epäonnistui – kopioi teksti talteen.');}}
+function lStat(m){$('longStatus').textContent=m;}
+function lCount(){var v=lt().value;$('longCount').textContent=(v.match(/\S+/g)||[]).length+' sanaa · '+v.length+' merkkiä';}
+function tick(){$('longTime').textContent=fmt(curElapsed());}
+function lHelp(k){var el=$('longHelp');el.innerHTML=HELP[k]||'';el.classList.toggle('hidden',!HELP[k]);}
+function wakeOn(){
+  if(!('wakeLock' in navigator)){$('wakeInfo').textContent='Selain ei voi pitää näyttöä päällä. Pidennä näytön aikakatkaisua puhelimen asetuksista.';return;}
+  navigator.wakeLock.request('screen').then(function(w){L.wake=w;$('wakeInfo').textContent='Näyttö pysyy päällä sanelun ajan.';w.addEventListener('release',function(){L.wake=null;});})
+  .catch(function(){$('wakeInfo').textContent='Näytön päälläpito ei onnistunut. Pidennä näytön aikakatkaisua.';});
+}
+function wakeOff(){try{if(L.wake)L.wake.release();}catch(e){}L.wake=null;$('wakeInfo').textContent='';}
+document.addEventListener('visibilitychange',function(){
+  if(!L.on)return;
+  if(document.visibilityState==='visible'){if(!L.wake)wakeOn();if(!L.rec&&!L.pendingStart)scheduleRestart(300);}
+  else lStat('⚠ Sovellus taustalla – tunnistus voi katketa. Palaa sovellukseen.');
+});
+function appendFinal(x){
+  x=spokenPunct(x);if(!x.trim())return;
+  var ta=lt(),v=ta.value,el=curElapsed();
+  if($('longStamps').checked&&(L.lastStamp<0||el-L.lastStamp>=300000)){v=v.replace(/\s+$/,'');v+=(v?'\n\n':'')+'['+fmt(el)+'] ';L.lastStamp=el;}
+  else if(v&&!/\s$/.test(v)&&!/^[,.!?\n]/.test(x))v+=' ';
+  if(!v.trim()||/[.!?]\s*$/.test(v)||/\]\s$/.test(v)||/\n\s*$/.test(v))x=x.charAt(0).toUpperCase()+x.slice(1);
+  var atBottom=ta.scrollHeight-ta.scrollTop-ta.clientHeight<60;
+  ta.value=v+x;if(atBottom)ta.scrollTop=ta.scrollHeight;
+  lSave();lCount();
+}
+var STUCK_INTERIM=4000, NO_RESULT=15000;
+function lStartRec(){
+  L.pendingStart=false;
+  if(!L.on||L.rec)return;
+  var r=new SR();r.lang='fi-FI';r.continuous=true;r.interimResults=true;
+  r.onresult=function(e){
+    if(r!==L.rec)return;
+    var tmp='',now=Date.now();
+    for(var i=e.resultIndex;i<e.results.length;i++){var x=e.results[i][0].transcript.trim();if(e.results[i].isFinal){appendFinal(x);L.lastFinal=now;}else tmp+=x+' ';}
+    tmp=tmp.trim();
+    if(tmp!==L.interim){L.interim=tmp;L.interimAt=now;}
+    L.lastResult=now;
+    $('longInterim').textContent=L.interim;
+  };
+  r.onerror=function(e){
+    if(r!==L.rec)return;
+    if(e.error==='not-allowed'||e.error==='service-not-allowed'){L.fatal=true;var env=micEnv();lHelp(env==='ok'?'denied':env);}
+    else if(e.error==='language-not-supported'){L.fatal=true;lStat('Suomi ei ole tuettu tässä selaimessa.');}
+    else if(e.error==='network'){L.netErr=true;lStat('⚠ Verkkovirhe – yritetään uudelleen...');}
+    else if(e.error==='audio-capture'){L.netErr=true;lStat('⚠ Mikrofonista ei saatu ääntä – yritetään uudelleen...');}
+  };
+  r.onend=function(){
+    if(r!==L.rec)return;
+    L.rec=null;
+    if(L.interim){appendFinal(L.interim);L.interim='';}
+    $('longInterim').textContent='';
+    if(!L.on)return;
+    if(L.fatal){lStop();lStat('Sanelu pysäytetty – katso ohje.');return;}
+    scheduleRestart(L.netErr?3000:null);L.netErr=false;
+  };
+  L.rec=r;L.recStart=Date.now();L.lastResult=L.recStart;L.interim='';L.interimAt=0;
+  try{r.start();lStat('🔴 Kuuntelen...');}
+  catch(e){L.rec=null;scheduleRestart(1000);}
+}
+function scheduleRestart(delay){
+  if(L.pendingStart||!L.on)return;
+  var now=Date.now();L.recent=L.recent.filter(function(t){return now-t<10000;});L.recent.push(now);
+  if(delay==null)delay=L.recent.length>8?2000:300;
+  L.restarts++;$('longRestarts').textContent='Uudelleenkäynnistyksiä: '+L.restarts;
+  L.pendingStart=true;setTimeout(lStartRec,delay);
+}
+// Chrome voi lakata antamasta tuloksia ilmoittamatta (onend ei tule). Vahtikoira hoitaa sen.
+function recycle(reason){
+  var r=L.rec;if(!r)return;
+  L.rec=null;
+  r.onresult=null;r.onerror=null;r.onend=null;
+  try{r.abort();}catch(e){}
+  if(L.interim){appendFinal(L.interim);L.interim='';}
+  $('longInterim').textContent='';
+  scheduleRestart(400);
+}
+function watchdog(){
+  if(!L.on)return;
+  var now=Date.now();
+  if(L.rec){
+    if(L.interim&&L.interimAt&&now-L.interimAt>STUCK_INTERIM)recycle('interim');
+    else if(now-L.lastResult>NO_RESULT&&now-L.recStart>NO_RESULT)recycle('silent');
+  }else if(!L.pendingStart){scheduleRestart(300);}
+  var lf=L.lastFinal?Math.round((now-L.lastFinal)/1000):null;
+  $('longLast').textContent=lf==null?'':'Viimeisin tunnistettu teksti: '+lf+' s sitten';
+  if(!navigator.onLine)lStat('⚠ Ei verkkoyhteyttä – tunnistus jatkuu, kun yhteys palaa.');
+}
+function lStop(){
+  L.elapsed=curElapsed();L.on=false;clearInterval(L.timer);L.pendingStart=false;
+  if(L.rec){try{L.rec.stop();}catch(e){}}
+  bcPost('stopped');
+  wakeOff();$('longBtn').textContent='▶ Jatka';$('longBtn').classList.remove('rec');$('longBtn').classList.add('pri');
+  tick();lSave();if(!L.fatal)lStat('Pysäytetty.');
+}
+$('longBtn').addEventListener('click',function(){
+  if(L.on){lStop();return;}
+  var env=micEnv();if(env!=='ok'){lHelp(env);return;}
+  lHelp('');
+  if(listening&&rec){try{rec.stop();}catch(e){}}
+  L.on=true;L.fatal=false;L.netErr=false;L.recent=[];L.start=Date.now();
+  L.lastFinal=0;$('longLast').textContent='';
+  L.timer=setInterval(function(){tick();watchdog();},1000);wakeOn();
+  bcPost('dictating');if(TTS.ok)ttsStop();
+  this.textContent='⏹ Pysäytä';this.classList.remove('pri');this.classList.add('rec');
+  lStartRec();
+});
+lt().addEventListener('input',function(){lSave();lCount();});
+$('longCopy').addEventListener('click',function(){var t=lt().value.trim();if(!t){toast('Ei kopioitavaa');return;}copyText(t,'Teksti kopioitu');});
+$('longDl').addEventListener('click',function(){
+  var t=lt().value;if(!t.trim()){toast('Ei ladattavaa');return;}
+  try{var d=new Date(),pad=function(n){return String(n).padStart(2,'0');};
+    var b=new Blob([t],{type:'text/plain;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(b);
+    a.download='sanelu-'+d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'-'+pad(d.getHours())+pad(d.getMinutes())+'.txt';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);toast('Ladattu');}catch(e){toast('Lataus ei onnistunut – käytä Kopioi');}
+});
+var lClearArm=false;
+$('longClear').addEventListener('click',function(){
+  if(L.on){toast('Pysäytä sanelu ensin');return;}
+  if(!lClearArm){lClearArm=true;this.textContent='Vahvista tyhjennys';var b=this;setTimeout(function(){lClearArm=false;b.textContent='Tyhjennä';},3000);return;}
+  lClearArm=false;this.textContent='Tyhjennä';
+  lt().value='';L.elapsed=0;L.lastStamp=-1;L.restarts=0;$('longRestarts').textContent='';$('longBtn').textContent='▶ Aloita';
+  tick();lSave();lCount();lStat('');
+});
+(function(){try{var s=JSON.parse(localStorage.getItem(LKEY)||'null');if(s){lt().value=s.text||'';L.elapsed=s.elapsed||0;L.lastStamp=typeof s.lastStamp==='number'?s.lastStamp:-1;if(L.elapsed)$('longBtn').textContent='▶ Jatka';}}catch(e){}tick();lCount();})();
+
+// ---------- useampi välilehti ----------
+var BC=null,TAB=uid();
+try{BC=new BroadcastChannel('viestiapu');}catch(e){}
+function bcPost(t){try{if(BC)BC.postMessage({t:t,from:TAB});}catch(e){}}
+if(BC){BC.onmessage=function(ev){var m=ev.data||{};if(m.from===TAB)return;
+  if(m.t==='hello'){bcPost('here');$('tabWarn').classList.remove('hidden');}
+  else if(m.t==='here'){$('tabWarn').classList.remove('hidden');}
+  else if(m.t==='dictating'){$('tabWarn').classList.remove('hidden');if(typeof ttsStop==='function')ttsStop();}
+  else if(m.t==='bye'){$('tabWarn').classList.add('hidden');}
+};bcPost('hello');window.addEventListener('pagehide',function(){bcPost('bye');});}
+
+// ---------- ääneen luku ----------
+var TTS={ok:'speechSynthesis' in window,voices:[],sel:'',rate:1,queue:[]};
+var TKEY='viestiapu_tts_v1';
+try{var ts=JSON.parse(localStorage.getItem(TKEY)||'null');if(ts){TTS.sel=ts.sel||'';TTS.rate=ts.rate||1;}}catch(e){}
+function ttsSave(){try{localStorage.setItem(TKEY,JSON.stringify({sel:TTS.sel,rate:TTS.rate}));}catch(e){}}
+function fiVoices(){return TTS.voices.filter(function(v){return /^fi/i.test(v.lang);});}
+function pickVoice(){
+  var all=TTS.voices,fi=fiVoices(),i;
+  for(i=0;i<all.length;i++)if(all[i].voiceURI===TTS.sel)return all[i];
+  for(i=0;i<all.length;i++)if(/noora/i.test(all[i].name))return all[i];
+  for(i=0;i<fi.length;i++)if(/natural|online/i.test(fi[i].name))return fi[i];
+  return fi[0]||null;
+}
+function renderVoices(){
+  var s=$('ttsVoice');if(!TTS.ok){s.innerHTML='<option>Ei tuettu</option>';s.disabled=true;$('ttsInfo').textContent='Tämä selain ei osaa lukea tekstiä ääneen.';return;}
+  var fi=fiVoices(),others=TTS.voices.filter(function(v){return !/^fi/i.test(v.lang);});
+  var cur=pickVoice();
+  s.innerHTML=(fi.length?'<optgroup label="Suomi">'+fi.map(function(v){return '<option value="'+esc(v.voiceURI)+'">'+esc(v.name)+'</option>';}).join('')+'</optgroup>':'')+
+    (others.length?'<optgroup label="Muut kielet">'+others.map(function(v){return '<option value="'+esc(v.voiceURI)+'">'+esc(v.name+' ('+v.lang+')')+'</option>';}).join('')+'</optgroup>':'');
+  if(cur)s.value=cur.voiceURI;
+  var hasNoora=TTS.voices.some(function(v){return /noora/i.test(v.name);});
+  $('ttsInfo').textContent=!TTS.voices.length?'Ääniä ladataan...':hasNoora?'Noora-ääni löytyi.':fi.length?'Noora-ääntä ei ole tässä selaimessa. Käytössä: '+(cur?cur.name:'—')+'. Noora löytyy Microsoft Edge -selaimesta.':'Suomenkielistä ääntä ei löytynyt tästä selaimesta.';
+}
+function loadVoices(){if(!TTS.ok)return;TTS.voices=speechSynthesis.getVoices()||[];renderVoices();}
+if(TTS.ok){loadVoices();try{speechSynthesis.addEventListener('voiceschanged',loadVoices);}catch(e){speechSynthesis.onvoiceschanged=loadVoices;}}else renderVoices();
+$('ttsRate').value=TTS.rate;$('ttsRateV').textContent=Number(TTS.rate).toFixed(1);
+$('ttsVoice').addEventListener('change',function(){TTS.sel=this.value;ttsSave();renderVoices();});
+$('ttsRate').addEventListener('input',function(){TTS.rate=parseFloat(this.value)||1;$('ttsRateV').textContent=TTS.rate.toFixed(1);ttsSave();});
+function chunkText(t){
+  var parts=t.replace(/\[(\d+:)?\d+:\d+\]/g,' ').replace(/[🔊⏹🎤▶•]/gu,' ').split(/(?<=[.!?])\s+|\n+/),out=[];
+  parts.forEach(function(p){p=p.trim();if(!p)return;
+    while(p.length>200){var cut=p.lastIndexOf(',',200);if(cut<80)cut=p.lastIndexOf(' ',200);if(cut<1)cut=200;out.push(p.slice(0,cut+1).trim());p=p.slice(cut+1).trim();}
+    if(p)out.push(p);});
+  return out;
+}
+function ttsDone(){var f=TTS.onDone;TTS.onDone=null;if(f)f();}
+function ttsStop(){TTS.queue=[];try{speechSynthesis.cancel();}catch(e){}$('ttsStop').classList.add('hidden');ttsDone();}
+function ttsNext(){
+  if(!TTS.queue.length){$('ttsStop').classList.add('hidden');ttsDone();return;}
+  var u=new SpeechSynthesisUtterance(TTS.queue.shift()),v=pickVoice();
+  if(v){u.voice=v;u.lang=v.lang;}else u.lang='fi-FI';
+  u.rate=TTS.rate;
+  u.onend=ttsNext;
+  u.onerror=function(e){if(e.error==='interrupted'||e.error==='canceled')return;ttsNext();};
+  speechSynthesis.speak(u);
+}
+function speak(t,onDone){
+  if(!TTS.ok){toast('Selain ei osaa lukea ääneen');if(onDone)onDone();return;}
+  ttsStop();t=(t||'').trim();if(!t){toast('Ei luettavaa');if(onDone)onDone();return;}
+  if(L.on){toast('Pysäytä pitkä sanelu ensin, muuten mikrofoni kuulee puheen');if(onDone)onDone();return;}
+  if(listening){try{rec.stop();}catch(e){}}
+  TTS.onDone=onDone||null;
+  TTS.queue=chunkText(t);$('ttsStop').classList.remove('hidden');ttsNext();
+}
+$('ttsStop').addEventListener('click',ttsStop);
+$('ttsTest').addEventListener('click',function(){speak('Hei! Tällä äänellä sovellus lukee tekstit.');});
+document.addEventListener('click',function(e){
+  var b=e.target.closest&&e.target.closest('[data-say]');if(!b)return;
+  var k=b.getAttribute('data-say'),t='';
+  if(k==='card'){var c=b.closest('.card');t=c?c.innerText:'';}
+  else{var el=document.querySelector(k);if(!el)return;
+    if(k==='#ohjeet'){var cl=el.cloneNode(true);var first=cl.querySelector('.card');if(first)first.remove();t=cl.innerText||cl.textContent;}
+    else t=('value' in el&&el.tagName!=='SECTION')?el.value:el.innerText;}
+  speak(t);
+});
+
+// ---------- harjoittele ----------
+var CATN={good:'Hyvä uutinen',bad:'Raskas asia',q:'Kysymys sinusta',plan:'Tapaamisehdotus',media:'Jaettu kuva tai biisi',small:'Arkijuttu',comp:'Kehu sinulle',busy:'Hänellä on kiire'};
+var SCEN=[
+ {c:'good',m:'Arvaa mitä! Sain sen työpaikan, jota hain viime kuussa. Aloitan joulukuussa!',ex:'Mahtavaa, onneksi olkoon! Mikä siinä työpaikassa kiinnosti sinua eniten?'},
+ {c:'good',m:'Juoksin tänään ensimmäistä kertaa kymmenen kilometriä putkeen 😊',ex:'Wau, hieno suoritus! Kauanko olet treenannut juoksua sitä varten?'},
+ {c:'good',m:'Sain vihdoin opinnot valmiiksi, valmistujaiset on lauantaina!',ex:'Onneksi olkoon, iso juttu! Miltä tuntuu, kun opinnot on nyt valmiina?'},
+ {c:'bad',m:'Tänään oli ihan kamala päivä töissä. Esimies huusi koko palaverin ajan.',ex:'Voi ei, kuulostaa tosi raskaalta. Mitä siinä palaverissa tapahtui?'},
+ {c:'bad',m:'Oon ollut koko viikon kipeänä, flunssa ei vaan hellitä.',ex:'Harmi, toivottavasti flunssa hellittää pian. Onko olo jo vähän parempi?'},
+ {c:'bad',m:'Koira joutui eläinlääkäriin, oon vähän huolissani.',ex:'Ymmärrän, että huolettaa. Mitä eläinlääkäri sanoi koirasta?'},
+ {c:'q',m:'Mitä sä teit viikonloppuna?',ex:'Kävin lauantaina pilkillä ja sunnuntaina lepäsin. Entä sinä, mitä teit viikonloppuna?'},
+ {c:'q',m:'Mikä sun lempiruoka on? Mä oon ihan hulluna thaimaalaiseen.',ex:'Mulla se on lohikeitto. Mikä thaimaalaisessa ruoassa on sinusta parasta?'},
+ {c:'q',m:'Mitä sä teet työksesi?',ex:'Olen tuotannossa töissä, teen vuorotyötä. Entä sinä, mitä teet työksesi?'},
+ {c:'plan',m:'Lähdetäänkö lauantaina kahville? Mulla olisi aikaa iltapäivällä.',ex:'Mielelläni! Sopisiko lauantaina kello kaksi? Mikä kahvila olisi sinusta mukava?'},
+ {c:'plan',m:'Olisitko vapaa ensi viikolla? Voitaisiin käydä vaikka elokuvissa.',ex:'Mielelläni! Torstai-ilta sopisi minulle. Millaisista elokuvista tykkäät?'},
+ {c:'media',m:'Katso tätä kuvaa, kävin eilen Rokuan kansallispuistossa 🌲',ex:'Upea kuva! Kävelitkö pitkän lenkin siellä kansallispuistossa?'},
+ {c:'media',m:'Kuuntele tää biisi, oon soittanut sitä koko päivän 🎵',ex:'Kiva biisi! Mikä siinä biisissä kolahtaa sinuun eniten?'},
+ {c:'small',m:'Täällä sataa taas lunta ihan kunnolla ❄️',ex:'Täälläkin sataa lunta! Tykkäätkö talvesta vai odotatko jo kesää?'},
+ {c:'small',m:'Aloitin vähän aikaa sitten kuntosalin, mutta en tiedä mitä teen siellä 😅',ex:'Hienoa että aloitit kuntosalin! Mitä liikkeitä olet jo kokeillut?'},
+ {c:'comp',m:'Sä oot kyllä tosi hauska tyyppi 😄',ex:'Kiitos, ilahduin tosi paljon! Sä oot itsekin hauska tyyppi. Mikä sua on viime aikoina naurattanut?'},
+ {c:'busy',m:'Sori, oon tänään tosi kiireinen, jutellaan myöhemmin!',ex:'Ei hätää, tsemppiä päivään! Jutellaan myöhemmin.'}
+];
+var POSREPLY=/(mahtav|upea|hieno|onnea|onneksi olkoon|ihana|siisti|wau|vau|huippu|loistav|jee|mahtis|kiva kuulla|ilo kuulla|hyvä juttu|super|kiva|kuulostaa hyvältä|ylpeä|mielelläni)/iu;
+var EMPATHY=/(harmi|ikävä|kurja|voi ei|voi että|raskas|raskaalta|rankka|rankalta|ymmärrän|jaksamista|tsemppi|kuulostaa|sääli|pahoillani|toivottavasti|lepää|halaus|huolettaa)/iu;
+var CLEAR=/(kyllä|joo|juu|käy|sopii|sopisi|mielelläni|ilman muuta|totta kai|en pääse|en ehdi|ei käy|valitettavasti|kävisikö|sopisiko|voitaisiinko|maanantai|tiistai|keskiviikko|torstai|perjantai|lauantai|sunnuntai|huomenna|kello|klo)/iu;
+var THANKS=/(kiitos|kiitti|kiitoksia|ilahdu|ilahdutti|ilahduin|lämmitti|mukava kuulla|kiva kuulla)/iu;
+var PR={cur:null,start:0,timer:null,running:false};
+if(!Array.isArray(state.practice))state.practice=[];
+function prCriteria(t,sc){
+  var it=[],hs=stems(sc.m),ts=stems(t),shared=Object.keys(hs).filter(function(k){return ts[k];});
+  it.push([shared.length>0,'Viittasit hänen viestiinsä','Reis & Shaver 1988']);
+  if(sc.c==='busy'){
+    it.push([t.length<=140,'Lyhyt vastaus, kun hänellä on kiire (alle 140 merkkiä)',null]);
+  }else{
+    it.push([hasQuestion(t),'Kysyit jatkokysymyksen','Huang ym. 2017']);
+  }
+  if(sc.c==='good')it.push([POSREPLY.test(t),'Reagoit innostuneesti hyvään uutiseen','Gable ym. 2004']);
+  if(sc.c==='bad')it.push([EMPATHY.test(t),'Huomioit hänen tunteensa ennen omia asioitasi','Reis & Shaver 1988']);
+  if(sc.c==='plan')it.push([CLEAR.test(t),'Vastasit ehdotukseen selvästi (kyllä/ei/aika)',null]);
+  if(sc.c==='media')it.push([POSREPLY.test(t),'Kommentoit sitä, mitä hän jakoi','Gottman & DeClaire 2001']);
+  if(sc.c==='comp')it.push([THANKS.test(t),'Otit kehun vastaan kiittämällä',null]);
+  if(sc.c==='q')it.push([(t.match(/\p{L}+/gu)||[]).length>=6,'Vastasit hänen kysymykseensä (karkea arvio: vastauksessa on muutakin kuin kysymys)',null]);
+  var warns=evaluate(t,sc.m).filter(function(r){return r[0]==='warn';});
+  it.push([warns.length===0,'Ei sävyvaroituksia'+(warns.length?' ('+warns.map(function(w){return w[1];}).join(', ')+')':''),null]);
+  return it;
+}
+function prPick(){
+  var stats={};state.practice.forEach(function(a){var s=stats[a.c]||(stats[a.c]={p:0,n:0});s.p+=a.p;s.n+=a.n;});
+  var recent=state.practice.slice(-3).map(function(a){return a.i;});
+  var pool=[],tot=0;
+  SCEN.forEach(function(sc,i){if(recent.indexOf(i)>=0&&SCEN.length>4)return;var s=stats[sc.c],rate=s&&s.n?s.p/s.n:0.5;var w=1+(1-rate)*2;pool.push([i,w]);tot+=w;});
+  var r=Math.random()*tot;for(var k=0;k<pool.length;k++){r-=pool[k][1];if(r<=0)return pool[k][0];}
+  return pool[pool.length-1][0];
+}
+function prTick(){if(PR.running)$('prTimer').textContent=Math.floor((Date.now()-PR.start)/1000)+' s';}
+function prStartTimer(){PR.start=Date.now();PR.running=true;clearInterval(PR.timer);PR.timer=setInterval(prTick,250);prTick();}
+function prShow(i){
+  PR.cur=i;var sc=SCEN[i];
+  if(listening){try{rec.stop();}catch(e){}}
+  $('prBox').classList.remove('hidden');$('prResult').innerHTML='';$('prMine').value='';$('prMine').disabled=false;$('prDone').disabled=false;
+  $('prCat').textContent=CATN[sc.c];$('prMsg').textContent=sc.m;
+  PR.running=false;clearInterval(PR.timer);
+  if($('prRead').checked&&TTS.ok&&!L.on){$('prTimer').textContent='🔊';speak(sc.m,function(){if(PR.cur===i&&!PR.running&&!$('prResult').innerHTML)prStartTimer();});}
+  else prStartTimer();
+  $('prBox').scrollIntoView({behavior:'smooth',block:'start'});
+}
+$('prNew').addEventListener('click',function(){prShow(prPick());});
+$('prMic').addEventListener('click',function(){dictToggle($('prMine'),this,$('prMicStatus'),null,false);});
+punctOnInput($('prMine'));
+$('prDone').addEventListener('click',function(){
+  var t=$('prMine').value.trim();if(!t){toast('Kirjoita tai sanele ensin vastaus');return;}
+  if(listening){try{rec.stop();}catch(e){}}
+  var secs=PR.running?Math.round((Date.now()-PR.start)/1000):null;
+  PR.running=false;clearInterval(PR.timer);
+  var sc=SCEN[PR.cur],it=prCriteria(t,sc),ok=it.filter(function(x){return x[0];}).length;
+  state.practice.push({t:Date.now(),i:PR.cur,c:sc.c,s:secs,p:ok,n:it.length});
+  if(state.practice.length>500)state.practice=state.practice.slice(-500);
+  save();
+  var other=evaluate(t,sc.m).filter(function(r){return r[0]==='err';});
+  $('prResult').innerHTML='<div class="card"><div class="big">'+ok+' / '+it.length+'</div><div class="mut">kriteeriä täyttyi'+(secs!=null?' · vastausaika '+secs+' s':'')+'</div>'+
+    '<ul class="crit">'+it.map(function(x){return '<li>'+(x[0]?'✅ ':'⬜ ')+esc(x[1])+(x[2]?'<span class="src">Lähde: '+esc(x[2])+'</span>':'')+'</li>';}).join('')+'</ul>'+
+    (other.length?'<p class="mut" style="margin:8px 0 0">Kirjoitusasu: '+other.map(function(r){return esc(r[1]);}).join(', ')+'</p>':'')+'</div>'+
+    '<div class="card an"><b>Yksi mahdollinen vastaus</b><p style="margin:6px 0">'+esc(sc.ex)+'</p><button class="btn say" data-say="card" style="margin-left:0">🔊 Kuuntele</button></div>'+
+    '<div class="row"><button class="btn" id="prAgain">↻ Sama viesti uudelleen</button><button class="btn pri" id="prNext">▶ Seuraava viesti</button></div>';
+  $('prAgain').onclick=function(){prShow(PR.cur);};
+  $('prNext').onclick=function(){prShow(prPick());};
+  prRenderStats();
+});
+function prRenderStats(){
+  var a=state.practice;
+  if(!a.length){$('prStats').innerHTML='Ei vielä harjoituksia.';return;}
+  var p=0,n=0,byC={};a.forEach(function(x){p+=x.p;n+=x.n;var s=byC[x.c]||(byC[x.c]={p:0,n:0,k:0});s.p+=x.p;s.n+=x.n;s.k++;});
+  function avg(arr){var v=arr.filter(function(x){return x.s!=null;}).map(function(x){return x.s;});return v.length?Math.round(v.reduce(function(s,x){return s+x;},0)/v.length):null;}
+  var first=avg(a.slice(0,5)),lastv=avg(a.slice(-5));
+  var rows=Object.keys(byC).map(function(c){var s=byC[c];return {c:c,r:s.p/s.n,k:s.k};}).sort(function(x,y){return x.r-y.r;});
+  $('prStats').innerHTML='Harjoituksia: <b>'+a.length+'</b> · kriteereistä täyttyi <b>'+Math.round(p/n*100)+' %</b><br>'+
+    (first!=null&&a.length>=6?'Vastausaika: 5 ensimmäistä keskimäärin '+first+' s → 5 viimeisintä '+lastv+' s<br>':lastv!=null?'Vastausaika keskimäärin: '+lastv+' s<br>':'')+
+    rows.map(function(r){return esc(CATN[r.c])+': '+Math.round(r.r*100)+' % ('+r.k+' krt)';}).join('<br>');
+}
+var prResetArm=false;
+$('prReset').addEventListener('click',function(){
+  if(!prResetArm){prResetArm=true;this.textContent='Vahvista nollaus';var b=this;setTimeout(function(){prResetArm=false;b.textContent='Nollaa tilastot';},3000);return;}
+  prResetArm=false;this.textContent='Nollaa tilastot';state.practice=[];save();prRenderStats();toast('Tilastot nollattu');
 });
 
 // ---------- henkilöt ----------
@@ -462,7 +919,10 @@ function renderWho(){
   s.innerHTML='<option value="">— ei valittu —</option>'+state.people.map(function(p){return '<option value="'+esc(p.id)+'">'+esc(p.name||'(nimetön)')+' · '+esc(p.ch)+'</option>';}).join('');
   s.value=person(state.current)?state.current:'';
   var p=person(s.value);
-  $('whoInfo').innerHTML=p?[p.int?'Kiinnostaa: '+esc(p.int):'',p.dates?'Päivät: '+esc(p.dates):''].filter(Boolean).join('<br>'):'';
+  var last=p&&p.hist&&p.hist.length?p.hist[p.hist.length-1]:null;
+  function cut(s,n){s=String(s||'');return s.length>n?s.slice(0,n)+'…':s;}
+  $('whoInfo').innerHTML=p?[p.int?'Kiinnostaa: '+esc(p.int):'',p.told?'Kertonut: '+esc(cut(p.told,160)):'',p.dates?'Päivät: '+esc(p.dates):'',
+    last?'Edellinen ('+esc(new Date(last.t).toLocaleDateString('fi-FI'))+'): '+(last.her?'hän: "'+esc(cut(last.her,80))+'" · ':'')+'sinä: "'+esc(cut(last.me,80))+'"':''].filter(Boolean).join('<br>'):'';
 }
 $('who').addEventListener('change',function(){state.current=this.value;save();renderWho();});
 
@@ -471,7 +931,7 @@ function renderPeople(){
   $('people').innerHTML=state.people.map(function(p){
     var hist=(p.hist||[]).slice(-20).reverse();
     return '<div class="card"><div class="person"><div><span class="nm">'+esc(p.name||'(nimetön)')+'</span> <span class="mut">'+esc(p.ch)+'</span></div>'+
-      '<button class="btn" data-edit="'+esc(p.id)+'">Muokkaa</button></div>'+
+      '<div><button class="btn say" data-say="card">🔊</button><button class="btn" data-edit="'+esc(p.id)+'" style="margin-left:6px">Muokkaa</button></div></div>'+
       (p.int?'<p class="mut" style="margin:6px 0 0">Kiinnostaa: '+esc(p.int)+'</p>':'')+
       (p.told?'<p class="mut" style="margin:4px 0 0;white-space:pre-wrap">Kertonut: '+esc(p.told)+'</p>':'')+
       (p.dates?'<p class="mut" style="margin:4px 0 0;white-space:pre-wrap">Päivät: '+esc(p.dates)+'</p>':'')+
@@ -532,7 +992,7 @@ $('impFile').addEventListener('change',function(){
   r.readAsText(f);this.value='';
 });
 
-load();renderWho();renderPeople();check();
+load();if(!Array.isArray(state.practice))state.practice=[];loadDraft();renderWho();renderPeople();check();prRenderStats();
 })();
 </script>
 </body>
